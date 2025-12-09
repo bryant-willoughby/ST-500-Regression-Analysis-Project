@@ -1,0 +1,249 @@
+---
+title: "DataManipulation"
+author: "Bryant Willoughby"
+date: "2025-12-07"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(dplyr)
+library(gridExtra)
+library(readr)
+```
+
+
+```{r}
+# working directory 
+getwd()
+setwd("C:/Users/Bryant Willoughby/OneDrive/Documents/ST500/Project")
+list.files()
+```
+
+## Data Manipulation 
+Manipulate as done with my DataManipulation.ipynb file 
+- need to make sure that I am not removing too many important variables 
+- I want a set of candidate predictors
+- only need a training and test here 
+
+```{r}
+# Read dataset (robust for large CSVs)
+df <- fread("austin_micromobility.csv") %>%  as_tibble()
+dim(df)
+```
+
+```{r} 
+# head(df)
+# tail(df)
+# names(df)
+
+# Drop unnecessary columns
+    # unique IDs arbitrary and not from provider 
+    # year not unique: all from 2018
+    # only store UTC timestamps; local time conversion not needed for analysis
+    # Census Tract Start and End contain non-random missigness
+      # deleting b/c hard to manipulate accordingly 
+drop_cols <- c("ID", "Device ID", "Modified Date", "Year (US/Central)", 
+               "Start Time (US/Central)", "End Time (US/Central)", 
+               "Census Tract Start", "Census Tract End"
+               ) 
+df <- df[, !(names(df) %in% drop_cols)]
+# names(df)
+```
+
+```{r}
+# Trip Duration & Trip Distance: clean to numeric
+clean_numeric <- function(x) {
+  # keep digits, dot, minus; coerce else NA
+  x_chr <- as.character(x)
+  x_clean <- gsub("[^0-9\\.\\-]", "", x_chr)
+  x_clean <- as.numeric(x_clean)
+  #suppressWarnings(as.numeric(x_clean))
+}
+df <- df %>% 
+  mutate(
+    tripduration = clean_numeric(`Trip Duration`),
+    tripdistance = clean_numeric(`Trip Distance`)
+  )
+
+df <- df[, !(names(df) %in% c("Trip Duration", "Trip Distance"))]
+```
+
+```{r}
+df <- df %>%
+  mutate(
+    `Start Time` = as_datetime(`Start Time`),
+    `End Time`   = as_datetime(`End Time`),
+    start_ts     = as.numeric(`Start Time`),  # seconds since epoch
+    end_ts       = as.numeric(`End Time`)
+  ) %>%
+  dplyr::select(-`Start Time`, -`End Time`)
+```
+
+```{r}
+# Impute Council District (Start/End) with most-frequent (mode) value 
+
+# Treat "None" as missing
+df <- df %>%
+  mutate(
+    `Council District (Start)` = na_if(as.character(`Council District (Start)`), "None"),
+    `Council District (End)`   = na_if(as.character(`Council District (End)`),   "None")
+  )
+
+# Mode helper (numeric after coercion)
+mode_value <- function(x) {
+  x_num <- as.numeric(x)
+  tab <- table(x_num, useNA = "no")
+  as.numeric(names(tab)[which.max(tab)])
+}
+
+start_mode <- mode_value(df$`Council District (Start)`)
+end_mode   <- mode_value(df$`Council District (End)`)
+
+# Impute and finalize variable names 
+df <- df %>%
+  mutate(
+    councilstart = if_else(is.na(`Council District (Start)`), start_mode, as.numeric(`Council District (Start)`)),
+    councilend   = if_else(is.na(`Council District (End)`),   end_mode,   as.numeric(`Council District (End)`))
+  ) %>%
+  dplyr::select(-`Council District (Start)`, -`Council District (End)`)
+
+# convert to factor vars accordingly 
+df$councilstart <- factor(df$councilstart)
+df$councilend   <- factor(df$councilend)
+
+```
+
+```{r}
+# Categorical variable handling
+df <- df %>%
+  mutate(
+    # Vehicle Type: Simple factor
+    vehicle_type = factor(`Vehicle Type`, levels = c("bicycle", "scooter")),
+    
+    # Day of Week: Simple factor
+    day_of_week = factor(`Day of Week`, 
+                         levels = 1:5, 
+                         labels = c("Mon", "Tue", "Wed", "Thu", "Fri")),
+    
+    # Month: 3 seasonal groups
+    season = factor(case_when(
+      Month %in% 4:6 ~ "Spring/Early Summer",
+      Month %in% 7:9 ~ "Summer",
+      Month %in% 10:12 ~ "Fall/Winter"
+    ), levels = c("Spring/Early Summer", "Summer", "Fall/Winter")),
+    
+    # Hour: 4 time-of-day groups (note: 23 wraps to Night)
+    time_of_day = factor(case_when(
+      Hour %in% c(23, 0:5) ~ "Night",
+      Hour %in% 6:11 ~ "Morning",
+      Hour %in% 12:17 ~ "Afternoon",
+      Hour %in% 18:22 ~ "Evening"
+    ), levels = c("Night", "Morning", "Afternoon", "Evening"))
+  ) %>%
+  dplyr::select(-`Vehicle Type`, -`Day of Week`, -Month, -Hour)  # Remove originals
+
+# as.factor(df$vehicle_type) %>% unique
+# as.factor(df$day_of_week) %>% unique
+# as.factor(df$season) %>% unique
+# as.factor(df$time_of_day) %>% unique
+# str(df)
+
+```
+
+I have cleaned numeric variables accordingly, imputed when necessary, and constructed meaningful categorical variables with a reasonable number of levels. This makes modeling more interpretable. 
+
+Next, I only retain positive trip distances; these are contextually meaningful. I also log-transform trip distance, because its original scale-variable was strongly skewed. The log-transform is approximately normal, more appropriate for my subsequent linear modeling assumption. 
+
+```{r}
+# Remove all non-positive trip distances (zeros and negatives)
+non_positive <- sum(df$tripdistance <= 0)
+cat("Non-positive Trip Distance rows removed (<=0):", non_positive, "\n")
+
+df <- df %>% filter(tripdistance > 0)
+
+# Create log-transformed variable and remove raw tripdistance
+df <- df %>%
+  mutate(log_tripdistance = log(tripdistance)) %>%
+  dplyr::select(-tripdistance)
+```
+
+```{r}
+# Store original for visualization (optional)
+plot_df <- df %>%
+  mutate(tripdistance = exp(log_tripdistance))
+
+p1 <- ggplot(plot_df, aes(x = tripdistance)) +
+  geom_histogram(bins = 100, fill = 'steelblue', color = 'black') +
+  labs(title = 'Trip Distance', x = 'Distance', y = 'Frequency') +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2 <- ggplot(plot_df, aes(x = log_tripdistance)) +
+  geom_histogram(bins = 100, fill = 'darkorange', color = 'black') +
+  labs(title = 'log(Trip Distance)', x = 'log(Distance)', y = 'Frequency') +
+  theme_minimal() + 
+  theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(p1, p2, ncol = 2)
+```
+
+```{r}
+png("log_tripdistance_histogram.png", width = 800, height = 600, res = 100)
+
+# Log-transformed Trip Distance with larger fonts
+hist(df$log_tripdistance, breaks = 100, col = 'darkorange', border = 'black',
+     main = 'log(Trip Distance)', xlab = 'log(Distance)', ylab = 'Frequency',
+     cex.main = 1.5,   # title size
+     cex.lab = 1.3,    # axis label size
+     cex.axis = 1.2)   # axis tick label size
+grid(col = 'gray', lty = 1, lwd = 0.5)
+
+dev.off()
+```
+
+```{r}
+# Train/test split (70% / 30%) and write to working directory 
+set.seed(42)
+train_idx <- sample(seq_len(nrow(df)), size = floor(0.7 * nrow(df)))
+traindf <- df[train_idx, ]
+testdf <- df[-train_idx, ]
+```
+
+To improve numerical stability and ensure comparable scaling across predictors, all continuous variables were standardized using the mean and standard deviation from the training set. Standardization prevents predictors with large numeric ranges (such as timestamps and trip duration) from dominating model fitting and improves the behavior of interaction and quadratic terms. The same scaling parameters were applied to the test data to avoid data leakage and maintain consistency for model evaluation.
+
+```{r}
+# ---- Standardize numeric predictors based on TRAIN means/SD ----
+
+num_vars <- c("tripduration", "start_ts", "end_ts")
+
+# Compute training means and SDs
+train_means <- sapply(traindf[num_vars], mean)
+train_sds   <- sapply(traindf[num_vars], sd)
+
+# Standardize training set
+traindf[paste0(num_vars, "_z")] <- scale(
+  traindf[num_vars],
+  center = train_means,
+  scale  = train_sds
+)
+
+# Apply SAME means and SDs to the test set
+testdf[paste0(num_vars, "_z")] <- scale(
+  testdf[num_vars],
+  center = train_means, 
+  scale  = train_sds
+)
+
+traindf <- traindf[, !(names(traindf) %in% num_vars)]
+testdf <- testdf[, !(names(testdf) %in% num_vars)]
+```
+
+
+```{r}
+saveRDS(traindf, "traindf.rds")
+saveRDS(testdf, "testdf.rds")
+```
+

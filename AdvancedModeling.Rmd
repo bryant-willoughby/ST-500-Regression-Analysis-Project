@@ -1,0 +1,458 @@
+---
+title: "AdvancedModeling"
+author: "Bryant Willoughby"
+date: "2025-12-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(data.table)
+library(MASS)     # stepAIC
+library(glmnet)   # ridge & lasso
+library(Metrics)  # rmse
+library(doParallel)
+library(parallel)
+```
+
+
+```{r}
+# working directory 
+getwd()
+setwd("C:/Users/Bryant Willoughby/OneDrive/Documents/ST500/Project")
+list.files()
+```
+
+```{r}
+traindf <- readRDS("traindf.rds")
+testdf <- readRDS("testdf.rds")
+```
+
+The earlier analyses (EDA and PreliminaryModeling) showed that the simple main–effects OLS model is misspecified and that even a carefully constructed nonlinear/interaction model (M7) still leaves substantial unexplained variation and residual structure. In this section, I move beyond purely hand–crafted model building and explore automated linear modeling strategies that can search a richer feature space than M7 while still maintaining a linear structure in the predictors. Specifically, I fit a StepAIC model, a ridge regression model, and a lasso model, all built on the same expanded feature space. Their out–of–sample performance is then compared against the interpretable M7 baseline to assess the trade–offs between interpretability and predictive accuracy.
+
+### Candidate Feature Space 
+
+Here I define a “rich but still structured” candidate model that includes:
+
+- All main effects used previously (standardized tripduration and start timestamp, council districts, vehicle type, day of week, season, time of day)
+- All pairwise interactions among these predictors (via (...)^2),
+- Quadratic terms in the standardized continuous variables (tripduration_z^2, start_ts_z^2).
+
+This creates a high–dimensional linear model that generalizes M7 and gives the automated procedures room to search for useful higher–order structure.
+
+```{r}
+# full formula 
+full_formula <- as.formula(
+  "log_tripdistance ~ 
+     (tripduration_z + start_ts_z + councilstart + councilend +
+      vehicle_type + day_of_week + season + time_of_day)^2 +
+      I(tripduration_z^2) + I(start_ts_z^2)"
+)
+```
+
+```{r}
+tt <- terms(full_formula)
+attr(tt, "term.labels")
+```
+
+This full model is intentionally larger than M7 and includes many potentially weak or redundant terms. The purpose is not to interpret this model directly but to define a broad candidate space for automated procedures such as StepAIC, ridge, and lasso.
+
+I fit the full model once to confirm that it is numerically estimable. The computation required approximately 157 seconds of elapsed time on my machine, and the resulting model achieved an $R^2 \approx$ 0.191, modestly higher than the M7 model but still indicating substantial unexplained variation. The code below is preserved for documentation but commented out during knitting so that the .Rmd executes quickly.
+
+```{r}
+# #Fit the full model once to confirm it is estimable
+# system.time({
+# M_full <- lm(full_formula, data = traindf)
+# })
+# summary(M_full)$r.squared
+```
+
+### StepAIC on the full model 
+
+Although StepAIC is a classical variable-selection tool, it is fundamentally designed for small to moderate datasets and becomes computationally prohibitive in high-dimensional, large-n settings. In this project, the expanded candidate model includes several hundred predictors arising from many categorical levels, all pairwise interactions, and quadratic terms, applied to more than one million observations. StepAIC requires repeatedly fitting full OLS models during its search, and each OLS fit on a dataset of this size is extremely expensive. In practice, the procedure began consuming large amounts of memory and CPU time, with run times exceeding several minutes per iteration and no guarantee of timely convergence.
+
+Moreover, stepwise selection is widely regarded as outdated and statistically unstable, often producing models that are overly sensitive to small perturbations in the data. Modern penalized regression methods—particularly ridge and lasso via glmnet—are far more computationally efficient, scalable, and statistically principled for large, complex feature spaces. For these reasons, and due to clear computational constraints, the StepAIC procedure was not pursued further and the analysis proceeds using contemporary shrinkage-based approaches.
+
+```{r}
+# set.seed(42)
+# step_model <- stepAIC(
+#   lm(full_formula, data = traindf),
+#   direction = "backward",
+#   trace = TRUE
+# )
+# 
+# summary(step_model)
+```
+
+### Parallelization Steps 
+
+This section detects the number of available physical and logical CPU cores and allocates a conservative subset of them for parallel computation. By creating a cluster and registering it with doParallel, subsequent procedures—such as cross-validated ridge or lasso models—can distribute their computation across multiple cores, substantially reducing run time. The choice to use only half of the available cores ensures that the operating system remains responsive and prevents memory or CPU overload.
+
+```{r}
+### Parallelization Setup
+logical_cores  <- parallel::detectCores(logical = TRUE)
+physical_cores <- parallel::detectCores(logical = FALSE)
+
+ncores <- min(physical_cores, logical_cores - 2) / 2 
+print(ncores)
+
+cl <- makeCluster(ncores)
+registerDoParallel(cl)
+```
+
+### Sparse Matrices 
+
+Fitting the expanded model formula dramatically increases dimensionality because pairwise interactions among many categorical predictors generate tens of thousands of columns. A dense model matrix is too large to store in memory, causing glmnet to fail when allocating internal working vectors. Converting the design matrix to a sparse format avoids storing unnecessary zeros and reduces memory usage by more than an order of magnitude. All penalized models below use this sparse structure.
+
+```{r}
+library(Matrix)
+
+# Build sparse model matrix from full_formula
+X <- sparse.model.matrix(full_formula, data = traindf)[, -1]
+y <- traindf$log_tripdistance
+
+dim(X)   # inspect dimensions
+```
+### Lasso Regression 
+
+The lasso model was fit using 3-fold cross-validation on the full expanded feature space, with a constrained regularization path (nlambda = 50, lambda.min.ratio = 0.01) to ensure computational feasibility. Cross-validation selected λ_min = 0.0573, which minimized the CV-MSE (1.5251), and λ_1se = 0.1611, a more parsimonious penalty within one standard error of the minimum. The cross-validation plot shows these as the left (λ_min) and right (λ_1se) vertical dotted lines; λ_min yields the best predictive accuracy, while λ_1se provides a simpler but slightly less accurate model. At λ_min, the lasso retains 21 predictors, including timestamp effects, curvature in timestamp, scooter indicator, and several trip-duration interactions involving day-of-week, season, and council district combinations. At λ_1se, the model becomes extremely sparse, retaining only 4 predictors, reflecting much more aggressive shrinkage.
+
+Out-of-sample performance shows modest improvement over the interpretable M7 model: RMSE = 1.2336 at λ_min versus 1.2489 at λ_1se and 1.2903 for M7. Although λ_min performs slightly better, both lasso fits still exhibit clear structure in the residual–fitted plots—particularly curvature and fanning—indicating that no linear combination of the included predictors can adequately model the underlying mean function. Additional hyperparameter searches (e.g., expanding the λ range, increasing nfolds, or modifying the regularization path) would be computationally expensive and unlikely to yield substantive gains, because the dominant barrier is structural misspecification, not insufficient shrinkage. Thus, while lasso provides a more compact and modestly more accurate model than M7, the plateau in RMSE and persistent residual patterns suggest that genuinely nonlinear modeling strategies would be required to achieve substantial improvements.
+
+
+```{r}
+set.seed(42)
+
+lasso_cv <- cv.glmnet(
+  X, y,
+  alpha = 1,              # lasso
+  nfolds = 3,
+  parallel = TRUE,
+  nlambda = 50,           # default: 100
+  lambda.min.ratio = 0.01 # still reasonable for large n, p
+)
+```
+
+```{r}
+png("LassoCV.png", width = 800, height = 600, res = 100)
+plot(lasso_cv)
+dev.off()
+```
+
+```{r}
+lambda_min <- lasso_cv$lambda.min
+lambda_1se <- lasso_cv$lambda.1se
+
+lambda_min; lasso_cv$cvm[which.min(lasso_cv$cvm)]
+lambda_1se
+```
+
+```{r}
+# Coefficients at lambda_min (less shrinkage → more predictors)
+coef_min  <- coef(lasso_cv, s = "lambda.min")
+
+# Coefficients at lambda_1se (more shrinkage → fewer predictors)
+coef_1se  <- coef(lasso_cv, s = "lambda.1se")
+
+```
+
+
+```{r}
+nonzero_min  <- sum(coef_min  != 0)
+nonzero_1se  <- sum(coef_1se  != 0)
+
+list(
+  Model = c("LASSO (lambda.min)", "LASSO (lambda.1se)"),
+  Nonzero_Coefficients = c(nonzero_min, nonzero_1se)
+)
+
+```
+```{r}
+# Clean coefficient tables
+active_min <- list(
+  term = rownames(coef_min)[coef_min[,1] != 0],
+  estimate = as.numeric(coef_min[coef_min[,1] != 0])
+)
+
+active_1se <- list(
+  term = rownames(coef_1se)[coef_1se[,1] != 0],
+  estimate = as.numeric(coef_1se[coef_1se[,1] != 0])
+)
+
+active_min
+active_1se
+
+```
+
+```{r}
+# Build test matrix (must match training matrix)
+X_test <- sparse.model.matrix(full_formula, data = testdf)[ , -1]
+
+# Predictions
+pred_min  <- predict(lasso_cv, newx = X_test, s = lambda_min)
+pred_1se  <- predict(lasso_cv, newx = X_test, s = lambda_1se)
+
+# RMSE for each
+rmse_min  <- rmse(testdf$log_tripdistance, pred_min)
+rmse_1se  <- rmse(testdf$log_tripdistance, pred_1se)
+
+tibble(
+  Model = c("LASSO (lambda.min)", "LASSO (lambda.1se)"),
+  RMSE  = c(rmse_min, rmse_1se)
+)
+```
+
+```{r}
+png("LASSOResidualsFitted.png", width = 800, height = 600, res = 100)
+par(mfrow = c(1, 2))
+
+plot(pred_min, pred_min - testdf$log_tripdistance,
+     pch = 20, cex = 0.5,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "(LASSO λ_min)")
+abline(h = 0, col = "red")
+lines(lowess(pred_min, pred_min - testdf$log_tripdistance),
+      col = "blue", lwd = 2)
+
+plot(pred_1se, pred_1se - testdf$log_tripdistance,
+     pch = 20, cex = 0.5,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = " (LASSO λ_1se)")
+abline(h = 0, col = "red")
+lines(lowess(pred_1se, pred_1se - testdf$log_tripdistance),
+      col = "blue", lwd = 2)
+par(mfrow = c(1,1))
+dev.off()
+```
+### Elastic Net 
+
+The elastic net model (α = 0.5) was fit using the same constrained cross-validation setup as the lasso model (3 folds, 50 λ values, λ_min.ratio = 0.01). Cross-validation selected λ_min = 0.1146 (CV-MSE = 1.5261) as the value that minimizes prediction error, and λ_1se = 0.3222 as a more conservative penalty producing a simpler model. At λ_min, elastic net retains 20 coefficients, nearly identical in composition to the lasso solution: timestamp effects, curvature in timestamp, scooter mode, and a small collection of trip-duration interactions with day-of-week, season, and specific council-district pairs. At λ_1se, the model collapses to only 4 active predictors, matching the level of sparsity seen in the lasso’s λ_1se solution and confirming the expected pathway toward more aggressive shrinkage under a stronger penalty.
+
+Predictive accuracy closely mirrors what was observed for lasso: RMSE = 1.2323 at λ_min and 1.2500 at λ_1se—nearly identical to the lasso RMSE values (1.2336 and 1.2489). This similarity occurs because, in this dataset, ridge-like shrinkage provides no substantial benefit over pure lasso selection: once elastic net reduces collinearity effects through its L2 component, nearly all remaining regularization is driven by the L1 penalty, leading both methods to select nearly the same predictors. As with the lasso, residual–fitted plots for elastic net show the same nonlinear curvature and heteroscedasticity patterns observed in M7, indicating that the fundamental limitation is mean-function misspecification, not insufficient shrinkage or collinearity. Thus, while elastic net produces a compact, stable linear model with slightly improved RMSE relative to M7, it cannot overcome the structural inability of linear models to capture the complex nonlinear dynamics in these mobility data.
+
+```{r}
+### Elastic Net (alpha = 0.5)
+set.seed(42)
+
+enet_cv <- cv.glmnet(
+  X, y,
+  alpha = 0.5,            # elastic net mixing parameter
+  nfolds = 3,             # same cross-validation structure as lasso
+  parallel = TRUE,        # uses your cluster
+  nlambda = 50,           # same computational constraint
+  lambda.min.ratio = 0.01 # same search depth
+)
+
+```
+
+
+```{r}
+png("ElasticNetCV.png", width = 800, height = 600, res = 100)
+plot(enet_cv)
+dev.off()
+```
+
+
+```{r}
+lambda_min_enet <- enet_cv$lambda.min
+lambda_1se_enet <- enet_cv$lambda.1se
+
+lambda_min_enet; enet_cv$cvm[which.min(enet_cv$cvm)]
+lambda_1se_enet
+```
+
+```{r}
+# Coefficients at λ_min
+coef_enet_min <- coef(enet_cv, s = "lambda.min")
+
+# Coefficients at λ_1se
+coef_enet_1se <- coef(enet_cv, s = "lambda.1se")
+```
+
+```{r}
+nonzero_enet_min <- sum(coef_enet_min != 0)
+nonzero_enet_1se <- sum(coef_enet_1se != 0)
+
+tibble(
+  Model = c("Elastic Net (lambda.min)", "Elastic Net (lambda.1se)"),
+  Nonzero_Coefficients = c(nonzero_enet_min, nonzero_enet_1se)
+)
+
+```
+
+```{r}
+# --- Active coefficients at λ_min ---
+active_enet_min <- list(
+  term     = rownames(coef_enet_min)[coef_enet_min[,1] != 0],
+  estimate = as.numeric(coef_enet_min[coef_enet_min[,1] != 0])
+)
+
+# --- Active coefficients at λ_1se ---
+active_enet_1se <- list(
+  term     = rownames(coef_enet_1se)[coef_enet_1se[,1] != 0],
+  estimate = as.numeric(coef_enet_1se[coef_enet_1se[,1] != 0])
+)
+
+active_enet_min
+active_enet_1se
+```
+
+```{r}
+# Build test matrix (must match training matrix)
+X_test <- sparse.model.matrix(full_formula, data = testdf)[ , -1]
+
+# Predictions for λ_min and λ_1se
+enet_pred_min  <- predict(enet_cv, newx = X_test, s = lambda_min_enet)
+enet_pred_1se  <- predict(enet_cv, newx = X_test, s = lambda_1se_enet)
+```
+
+
+```{r}
+rmse_enet_min <- rmse(testdf$log_tripdistance, enet_pred_min)
+rmse_enet_1se <- rmse(testdf$log_tripdistance, enet_pred_1se)
+
+tibble(
+  Model = c("Elastic Net (lambda.min)", "Elastic Net (lambda.1se)"),
+  RMSE  = c(rmse_enet_min, rmse_enet_1se)
+)
+```
+
+
+```{r}
+png("ElasticNetResidualsFitted.png", width = 800, height = 600, res = 100)
+par(mfrow = c(1, 2))
+
+# ENET λ_min
+plot(enet_pred_min,
+     enet_pred_min - testdf$log_tripdistance,
+     pch = 20, cex = 0.5,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "(Elastic Net λ_min)")
+abline(h = 0, col = "red")
+lines(lowess(enet_pred_min, enet_pred_min - testdf$log_tripdistance),
+      col = "blue", lwd = 2)
+
+# ENET λ_1se
+plot(enet_pred_1se,
+     enet_pred_1se - testdf$log_tripdistance,
+     pch = 20, cex = 0.5,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "(Elastic Net λ_1se)")
+abline(h = 0, col = "red")
+lines(lowess(enet_pred_1se, enet_pred_1se - testdf$log_tripdistance),
+      col = "blue", lwd = 2)
+
+par(mfrow = c(1,1))
+dev.off()
+```
+
+### Ridge Regression 
+
+Ridge regression was fit using the same constrained cross-validation design as lasso and elastic net (3 folds, 50 λ values, λ_min.ratio = 0.01). Because ridge does not perform variable selection, the solution retains essentially all coefficients in the expanded feature space (≈410 predictors). Cross-validation selects a relatively large penalty, λ_min = 10.56 (CV-MSE = 1.5746), and a much larger conservative penalty, λ_1se = 52.16. These values are notably higher than the optimal λ values chosen by lasso or elastic net, reflecting ridge’s tendency to distribute shrinkage smoothly across all correlated predictors rather than zeroing any of them out. Even under the strongest penalty (λ_1se), all coefficients remain non-zero, consistent with ridge’s structure.
+
+Predictive performance again mirrors that of the other penalized models but does not improve upon them: ridge achieves an RMSE of 1.2366 at λ_min and 1.2614 at λ_1se. These values fall between the lasso and elastic-net RMSEs, reinforcing that ridge’s inability to remove redundant interactions results in a model that is both less interpretable and no more accurate. Residual–fitted diagnostics reveal the same nonlinear curvature and heteroscedasticity patterns observed in M7, lasso, and elastic net, confirming that the dominant limitation is structural misspecification of the mean function rather than variance inflation or multicollinearity. Ridge therefore stabilizes coefficients but cannot capture the complex nonlinear relationships inherent in the mobility data, and its predictive gains are marginal relative to simpler penalized alternatives.
+
+```{r}
+### Ridge Regression (alpha = 0)
+set.seed(42)
+
+ridge_cv <- cv.glmnet(
+  X, y,
+  alpha = 0,              # ridge penalty
+  nfolds = 3,             # same CV design
+  parallel = TRUE,        # use cluster backend
+  nlambda = 50,           # reduced λ grid
+  lambda.min.ratio = 0.01 # same range as lasso/enet
+)
+```
+
+```{r}
+png("RidgeCV.png", width = 800, height = 600, res = 100)
+plot(ridge_cv)
+dev.off()
+```
+
+```{r}
+# Extract selected lambda values
+ridge_lambda_min <- ridge_cv$lambda.min
+ridge_lambda_1se <- ridge_cv$lambda.1se
+
+ridge_lambda_min; ridge_cv$cvm[which.min(ridge_cv$cvm)]
+ridge_lambda_1se
+```
+
+```{r}
+coef_ridge_min  <- coef(ridge_cv, s = "lambda.min")
+coef_ridge_1se  <- coef(ridge_cv, s = "lambda.1se")
+
+tibble(
+  Model = c("Ridge (lambda.min)", "Ridge (lambda.1se)"),
+  Nonzero_Coefficients = c(sum(coef_ridge_min != 0), sum(coef_ridge_1se != 0))
+)
+
+```
+
+```{r}
+# Build test matrix
+X_test <- sparse.model.matrix(full_formula, data = testdf)[ , -1]
+
+ridge_pred_min  <- predict(ridge_cv, newx = X_test, s = "lambda.min")
+ridge_pred_1se  <- predict(ridge_cv, newx = X_test, s = "lambda.1se")
+```
+
+```{r}
+rmse_ridge_min <- rmse(testdf$log_tripdistance, ridge_pred_min)
+rmse_ridge_1se <- rmse(testdf$log_tripdistance, ridge_pred_1se)
+
+tibble(
+  Model = c("Ridge (lambda.min)", "Ridge (lambda.1se)"),
+  RMSE  = c(rmse_ridge_min, rmse_ridge_1se)
+)
+
+```
+
+```{r}
+png("RidgeResidualsFitted.png", width = 800, height = 600, res = 100)
+par(mfrow = c(1, 2))
+
+# λ_min
+plot(ridge_pred_min,
+     ridge_pred_min - testdf$log_tripdistance,
+     pch = 20, cex = 0.5,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "(Ridge λ_min)")
+abline(h = 0, col = "red")
+lines(lowess(ridge_pred_min, ridge_pred_min - testdf$log_tripdistance),
+      col = "blue", lwd = 2)
+
+# λ_1se
+plot(ridge_pred_1se,
+     ridge_pred_1se - testdf$log_tripdistance,
+     pch = 20, cex = 0.5,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "(Ridge λ_1se)")
+abline(h = 0, col = "red")
+lines(lowess(ridge_pred_1se, ridge_pred_1se - testdf$log_tripdistance),
+      col = "blue", lwd = 2)
+
+par(mfrow = c(1,1))
+dev.off()
+```
+
+### Shut Down Parallel Cluster 
+
+This final block cleanly shuts down the parallel cluster and returns R to sequential execution. Releasing the workers prevents unnecessary CPU usage after modeling is complete and ensures that later code chunks do not unintentionally run in parallel.
+
+```{r}
+### Shut down parallel backend
+stopCluster(cl)
+registerDoSEQ()
+```
+

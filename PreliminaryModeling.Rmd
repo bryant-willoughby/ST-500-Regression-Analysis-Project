@@ -1,0 +1,280 @@
+---
+title: "Modeling"
+author: "Bryant Willoughby"
+date: "2025-12-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(data.table)
+library(MASS)
+library(Metrics)  # rmse
+```
+
+
+```{r}
+# working directory 
+getwd()
+setwd("C:/Users/Bryant Willoughby/OneDrive/Documents/ST500/Project")
+list.files()
+```
+
+```{r}
+traindf <- readRDS("traindf.rds")
+testdf  <- readRDS("testdf.rds")
+```
+
+### Interpretable OLS Model 
+
+To improve the misspecified main-effects model, I added nonlinear terms and interactions that were suggested both by diagnostic patterns and by intuitive considerations about how trip duration, time-of-day, season, and mode of travel may jointly influence trip distance. Each proposed term was evaluated using a general F-test, ensuring that the expanded structure was statistically warranted rather than arbitrarily complex. The additions—including quadratic terms for trip duration and timestamp, and interactions involving mode, season, and time-of-day—yielded significant reductions in residual variance and measurable gains in model fit. Although the resulting model includes many parameters, it provides a more realistic and interpretable representation of behavioral heterogeneity than the baseline main-effects model, while still serving as a structured, theory-guided foundation for later comparison with more automated selection methods such as stepAIC or LASSO.
+
+```{r}
+# Fit the full main-effects model
+M0 <- lm(log_tripdistance ~ ., data = traindf)
+summary(M0)
+```
+
+```{r}
+# Add nonlinear term: tripduration^2; significant
+M1 <- update(M0, . ~ . + I(tripduration_z^2))
+# anova(M0, M1)
+
+# Add nonlinear term: start_ts^2; significant
+M2 <- update(M1, . ~ . + I(start_ts_z^2))
+# anova(M1, M2) 
+
+# Add interaction between time_of_day and vehicle_type; significant
+M3 <- update(M2, . ~ . + time_of_day:vehicle_type)
+# anova(M2, M3) 
+
+# Add interaction between season and time_of_day; significant
+M4 <- update(M3, . ~ . + season:time_of_day)
+# anova(M3, M4)
+
+# Trip duration interacts with mode (bicycle vs scooter); significant
+M5 <- update(M4, . ~ . + tripduration_z:vehicle_type)
+# anova(M4, M5)
+
+# Duration–time-of-day interaction; significant 
+M6 <- update(M5, . ~ . + tripduration_z:time_of_day)
+# anova(M5, M6) 
+
+# Duration–season interaction; significant 
+M7 <- update(M6, . ~ . + tripduration_z:season)
+# anova(M6, M7)
+
+summary(M7)
+```
+
+The residual–fitted plots for M7 show a strong, persistent negative linear trend, even after expanding the mean structure with nonlinear terms and interactions. This pattern indicates that the model continues to systematically under- and over-predict across the range of fitted values, meaning key aspects of the mean function remain misspecified. The LOWESS smoother confirms this deviation from randomness, demonstrating that additional structure—or a fundamentally different modeling approach—may be required to adequately capture the relationship between predictors and log-distance.
+
+```{r}
+# Residuals and fitted values for M7
+res <- residuals(M7)
+fit <- M7$fitted.values
+
+# Create zoomed dataset: fitted between -20 and 40
+zoom_idx <- which(fit >= -20 & fit <= 40)
+
+png("M7ResidualsFitted.png", width = 800, height = 600, res = 100)
+par(mfrow = c(1, 2))  # side-by-side layout
+
+# ---- (1) Full residual plot ----
+plot(fit, res,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (M7)",
+     pch = 20, cex = 0.6)
+abline(h = 0, col = "red")
+# Smoother
+lines(lowess(fit, res), col = "blue", lwd = 2)
+
+# ---- (2) Zoomed residual plot (fitted in [-20, 40]) ----
+plot(fit[zoom_idx], res[zoom_idx],
+     xlab = "Fitted Values (-20 to 40)",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (Zoomed)",
+     pch = 20, cex = 0.6)
+abline(h = 0, col = "red")
+# Smoother
+lines(lowess(fit[zoom_idx], res[zoom_idx]), col = "blue", lwd = 2)
+
+par(mfrow = c(1, 1))  # reset layout
+dev.off()
+```
+
+### Weighted Least Squares (WLS)
+
+As a naïve check, a weighted least squares model was fit using weights derived from a simple variance–mean relationship estimated from the absolute residuals of M7. However, because the mean function in M7 is still misspecified, the fitted values—and therefore the estimated weights—inherit this misspecification. This produces distorted inference: coefficient magnitudes, standard errors, and significance levels are no longer interpretable, and the residual–fitted plot for the WLS model reveals an even stronger linear pattern than under OLS, indicating worsening model–variance interaction. Consequently, this WLS output is included only to demonstrate why proper mean-specification must come before variance modeling, not as a competing model.
+
+```{r}
+# === 1. Fit variance model using absolute residuals ===
+var_mod <- lm(abs(residuals(M7)) ~ M7$fitted.values)
+
+# Predicted sd (ensure positive)
+var_fit <- pmax(var_mod$fitted.values, 1e-6)
+
+# === 2. Define weights as inverse variance ===
+wts <- 1 / (var_fit^2)
+```
+
+```{r}
+# === 3. Fit WLS model ===
+M7_wls <- lm(
+  formula(M7),
+  data = traindf,
+  weights = wts
+)
+
+summary(M7_wls)
+```
+
+```{r}
+# === 4. Plot residuals vs fitted ===
+par(mfrow = c(1,1))
+plot(M7_wls$fitted.values, residuals(M7_wls),
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (M7 WLS)",
+     pch = 20, cex = 0.5)
+abline(h = 0, col = "red", lwd = 2)
+```
+
+
+### Robust Regression 
+
+The QQ-plot of standardized residuals shows extremely heavy-tailed error behavior, with large departures from the normal line at both ends. Because OLS is highly sensitive to such outliers and heavy tails, a robust regression method—which down-weights extreme residuals—is justified to obtain a model that better captures the central trend of the data.
+
+```{r}
+# QQ-plot for residual normality
+qqnorm(rstandard(M7), main = "QQ-Plot of Standardized Residuals (M7)")
+qqline(rstandard(M7), col = "red", lwd = 2)
+```
+
+Although heavy-tailed residual behavior initially motivated trying a robust regression approach, the Huber M-estimator does not meaningfully improve model performance for this dataset. The algorithm fails to converge (`rlm` warning) and produces unstable coefficient magnitudes because robust methods are designed to down-weight isolated outliers—not to correct a systematically misspecified mean function or the severe leverage imbalance created by highly uneven categorical predictors. As with the failed WLS attempt, the underlying issue is structural: the mean function is not flexible enough to capture the true relationship, and no choice of robust error model can compensate for this inadequacy. Consequently, robust regression is not an appropriate remedy at this stage and confirms the need for more flexible modeling strategies in subsequent sections.
+
+```{r}
+# # Huber M-estimator robust regression
+# M7_huber <- rlm(
+#   formula = formula(M7),
+#   data = traindf,
+#   psi = psi.huber   # default
+# )
+# 
+# summary(M7_huber)
+```
+
+
+### Influential Points 
+
+Although classical influence diagnostics flagged approximately 0.2% of observations as influential, removing these cases severely degraded predictive performance on the test set (RMSE increasing from 1.29 to 24.88). This confirms that the flagged points are not erroneous outliers but rather structurally important observations that anchor the regression surface in regions where the mean function is misspecified. Because the underlying issue is inadequate model flexibility rather than the presence of bad data, removing influential points is not an effective improvement strategy and introduces substantial overfitting.
+
+```{r}
+# --- Compute diagnostics ---
+hats   <- hatvalues(M7)
+stud   <- rstudent(M7)
+cooks  <- cooks.distance(M7)
+
+png("M7InfluentialPoints.png", width = 800, height = 600, res = 100)
+par(mfrow=c(1,3))
+
+# Leverage
+plot(hats, main="Leverage (Hat Values)", ylab="h_i")
+
+# Studentized residuals
+plot(stud, main="Externally Studentized Residuals")
+
+# Cook's Distance
+plot(cooks, main="Cook's Distance", ylab="D_i")
+
+par(mfrow=c(1,1))
+dev.off()
+```
+
+```{r}
+## Identify Influential Points 
+
+# --- Reasonable thresholds ---
+p <- length(coef(M7))                # number of predictors
+n <- nrow(traindf)                   # sample size
+
+hat_thresh   <- 2*p/n                # common leverage rule
+stud_thresh  <- 3                    # |t| > 3 is standard
+cooks_thresh <- 4/n                  # influential by Cook's D
+
+# --- Flag observations exceeding ALL thresholds ---
+infl_idx <- which(
+  (hats > hat_thresh) &
+  (abs(stud) > stud_thresh) &
+  (cooks > cooks_thresh)
+)
+
+length(infl_idx)
+```
+
+```{r}
+### Refit M7 After Removing Influential Points (programmatically)
+traindf_clean <- traindf[-infl_idx, ]
+
+M7_clean <- lm(
+  formula(M7),      # <-- uses original model formula automatically
+  data = traindf_clean
+)
+
+# much higher r^2 in train for this than original data
+  # be cautious; possible overfitting 
+summary(M7_clean)$r.squared
+```
+
+```{r}
+### Residuals vs Fitted for Cleaned M7 Model
+  # different pattern of misspecified predictions but still problematic
+res_clean <- residuals(M7_clean)
+fit_clean <- fitted(M7_clean)
+
+zoom_idx <- which(fit_clean >= -20 & fit_clean <= 40)
+
+png("PostM7ResidualsFitted.png", width = 800, height = 600, res = 100)
+par(mfrow = c(1,2))
+plot(
+  fit_clean, res_clean,
+  xlab = "Fitted Values",
+  ylab = "Residuals",
+  main = "Residuals vs Fitted (M7 After Removing Influential Points)",
+  pch = 20, cex = 0.5
+)
+abline(h = 0, col = "red", lwd = 2)
+lines(lowess(fit_clean, res_clean), col = "blue", lwd = 2)
+
+plot(fit_clean[zoom_idx], res_clean[zoom_idx],
+     xlab = "Fitted Values (-20 to 20)",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (Zoomed)",
+     pch = 20, cex = 0.6)
+abline(h = 0, col = "red")
+# Smoother
+lines(lowess(fit_clean[zoom_idx], res_clean[zoom_idx]), col = "blue", lwd = 2)
+
+par(mfrow = c(1, 1))  # reset layout
+dev.off()
+```
+
+```{r}
+### Compare Test-Set Performance: Original M7 vs Cleaned M7
+
+# Original predictions
+pred_M7     <- predict(M7,      newdata = testdf)
+rmse_M7     <- rmse(testdf$log_tripdistance, pred_M7)
+
+# Cleaned model predictions
+pred_M7clean <- predict(M7_clean, newdata = testdf)
+rmse_M7clean <- rmse(testdf$log_tripdistance, pred_M7clean)
+
+tibble(
+  Model = c("Original M7", "Cleaned M7"),
+  RMSE  = c(rmse_M7, rmse_M7clean)
+)
+```

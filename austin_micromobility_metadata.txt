@@ -1,0 +1,20 @@
+Austin Micromobility Trip Dataset - Variable Metadata
+
+trip_id: Text - A unique ID for each trip (arbitrary, not from provider)
+device_id: Text - Unique ID for the device used (arbitrary, not from provider)
+vehicle_type: Text - Type of vehicle (bicycle or scooter)
+trip_duration: Number - Duration of the trip in seconds
+trip_distance: Number - Distance of the trip in meters
+start_time: Floating Timestamp - Trip start time in UTC
+end_time: Floating Timestamp - Trip end time in UTC
+modified_date: Floating Timestamp - Record last modified date in US/Central time
+month: Number - Month of the trip (1 = January, etc.)
+hour: Number - Hour of the day the trip occurred
+day_of_week: Number - Day of the week (Sunday = 0)
+council_district_start: Text - Council district where the trip started
+council_district_end: Text - Council district where the trip ended
+year: Number - Year the trip started (US/Central time)
+census_geoid_start: Text - GEOID of 2010 US Census Tract trip originated from
+census_geoid_end: Text - GEOID of 2010 US Census Tract trip ended at
+start_time_us_central: Floating Timestamp - Trip start time in US/Central time
+end_time_us_central: Floating Timestamp - Trip end time in US/Central time

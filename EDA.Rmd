@@ -1,0 +1,228 @@
+---
+title: "FinalProject"
+author: "Bryant Willoughby"
+date: "2025-12-03"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(data.table)
+library(tidyverse)
+library(MASS)         # stepAIC
+library(leaps)        # regsubsets
+library(lars)         # lasso 
+library(car)
+```
+
+
+```{r}
+# working directory 
+getwd()
+setwd("C:/Users/Bryant Willoughby/OneDrive/Documents/ST500/Project")
+list.files()
+```
+
+```{r}
+traindf <- readRDS("traindf.rds")
+testdf  <- readRDS("testdf.rds")
+```
+
+I begin by fitting a baseline main-effects OLS model. Automated procedures (best subset selection, AIC stepwise selection, and lasso regression) are then applied to screen for influential main-effect predictors. These exploratory procedures establish a baseline understanding of which variables contribute meaningfully in a simple linear structure. Next, I conduct a full suite of regression diagnostics as recommended in Chapters 6–11 of the course text , using these results to motivate specific forms of model expansion, such as higher-order terms, interactions, spline transformations, or weighted least squares. Model complexity is guided by diagnostic evidence rather than arbitrary term inclusion. Lasso is used strictly as a variable-screening tool in the main-effects stage, not as a method to fit or interpret complex models. The final model form is chosen based on interpretability, diagnostic adequacy, and statistical justification, and may use OLS, WLS, or transformed predictors depending on the identified model deficiencies.
+
+### Baseline Main-Effects Model(s) \& Exploration
+
+The baseline main-effects model explains only about 4.5% of the variation in log-transformed trip distance, indicating that a simple linear structure is inadequate for this dataset. Across automated screening procedures—best subsets, stepwise AIC, and lasso—the consistently important predictors are trip duration, vehicle type, and the council district indicators, while several weaker temporal factors are only intermittently selected. Both start_ts and end_ts show instability due to their near-perfect linear dependence with trip duration (end_ts = start_ts + tripduration), and end_ts contributes no unique predictive value. Because of this deterministic relationship, end_ts should be removed from the candidate predictor set to prevent collinearity and improve interpretability. Overall, the screening results reinforce the need for a more flexible model that incorporates nonlinearities or interactions, which will be guided by the next stage of diagnostic analysis.
+
+```{r}
+# Fit the full main-effects model
+full_mod <- lm(log_tripdistance ~ ., data = traindf)
+
+# Summarize results
+summary(full_mod)
+```
+
+```{r}
+# Fit regsubsets (main effects only)
+regfit <- regsubsets(
+  log_tripdistance ~ .,
+  data = traindf,
+  nbest = 1,
+  nvmax = NULL
+)
+
+reg_summary <- summary(regfit)
+
+# Print model size performance (adjusted R^2 and Cp)
+reg_summary$adjr2
+reg_summary$cp
+
+# Plots to visualize best subset performance
+par(mfrow = c(1,2))
+plot(reg_summary$adjr2, type = "b", xlab = "Model Size", 
+     ylab = "Adjusted R^2")
+plot(reg_summary$cp, type = "b", xlab = "Model Size", 
+     ylab = "Cp")
+abline(0, 1, col = "red")
+par(mfrow = c(1,1))
+
+```
+
+```{r}
+# Stepwise AIC selection starting from the full model
+step_mod <- stepAIC(full_mod, direction = "backward", trace = FALSE)
+summary(step_mod)
+```
+```{r}
+### LASSO Variable Screening (Main Effects Only)
+
+# Build design matrix (numeric, no intercept)
+X_train <- model.matrix(log_tripdistance ~ ., data = traindf)[ , -1]
+y_train <- traindf$log_tripdistance
+
+# Fit LASSO regularization path
+lasso_mod <- lars(X_train, y_train, type = "lasso")
+plot(lasso_mod)
+```
+
+
+```{r}
+# Cross-validation to choose shrinkage level
+set.seed(123)
+cvlmod <- cv.lars(X_train, y_train, type = "lasso")
+
+# Selected step along the LASSO path
+lambda <- cvlmod$index[which.min(cvlmod$cv)]
+
+# plot chosen lambda 
+abline(v=lambda)
+paste("Lambda:", round(lambda, 3))
+```
+
+```{r}
+# Extract coefficients at that step
+lasso_coef <- coef(lasso_mod, s = lambda, mode = "fraction")
+
+# Identify variables kept by LASSO
+lasso_selected <- names(lasso_coef)[lasso_coef != 0]
+lasso_selected
+
+```
+
+
+
+```{r}
+# Drop end_ts due to near-perfect linear dependence with start_ts and tripduration
+traindf <- traindf %>% dplyr::select(-end_ts_z)
+testdf  <- testdf  %>% dplyr::select(-end_ts_z)
+```
+
+
+### Diagnostic Analyses 
+
+```{r}
+# baseline main-effect model w/o end_ts
+diag_mod <- lm(log_tripdistance ~ ., data = traindf)
+summary(diag_mod)
+```
+
+The residuals–versus–fitted plots reveal clear departures from the classical linear model assumptions, though the pattern is not a textbook “fanning” shape. Instead, the residuals form a triangular funnel, where variability is largest near small fitted values and decreases as fitted values increase. This indicates non-constant variance (heteroscedasticity). In addition, there is a systematic negative trend in the residual cloud as fitted values increase, suggesting that the current mean structure does not fully capture the relationship between predictors and the log-transformed response.
+
+
+```{r}
+# Residuals and fitted values
+res <- resid(diag_mod)
+fit <- diag_mod$fitted.values
+
+# Create zoomed dataset
+zoom_idx <- which(fit < 20)
+
+par(mfrow = c(1, 2))  # side-by-side layout
+
+# ---- (1) Full residual plot ----
+plot(fit, res,
+     xlab = "Fitted Values",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (Full Range)",
+     pch = 20, cex = 0.6)
+
+abline(h = 0, col = "red")
+# Smoother
+lines(lowess(fit, res), col = "blue", lwd = 2)
+
+# ---- (2) Zoomed residual plot (fitted < 20) ----
+plot(fit[zoom_idx], res[zoom_idx],
+     xlab = "Fitted Values (< 20)",
+     ylab = "Residuals",
+     main = "Residuals vs Fitted (Zoomed)",
+     pch = 20, cex = 0.6)
+
+abline(h = 0, col = "red")
+# Smoother
+lines(lowess(fit, res), col = "blue", lwd = 2)
+
+par(mfrow = c(1, 1))  # reset layout
+
+```
+
+```{r}
+# Quadratic test for zero-mean function assumption:
+lin_df <- data.frame(
+  ehat = resid(diag_mod),
+  yhat = diag_mod$fitted.values
+)
+
+quad_test <- lm(ehat ~ yhat + I(yhat^2), data = lin_df)
+summary(quad_test)
+```
+
+
+```{r}
+abs_res <- abs(resid(diag_mod))
+
+# non-constant variance test; significant 
+het_test <- lm(abs_res ~ diag_mod$fitted.values)
+summary(het_test)
+```
+The leverage plot shows that while most observations lie near zero leverage, a small number exhibit extremely high hat values, indicating rare and unusual combinations of predictors. The externally studentized residuals reveal a substantial number of severe outliers, with many observations exceeding ±10 and some reaching beyond −50, suggesting that the current main-effects model fails to capture key structural relationships in the data. Cook’s distance identifies several observations with disproportionately large influence—values far exceeding conventional thresholds—implying that these points strongly affect coefficient estimates. However, these influential observations likely reflect model misspecification rather than data errors. Therefore, rather than removing points at this stage, the appropriate next step is to improve the mean model through nonlinear terms or interactions and then reassess influence once the model better reflects the underlying data-generating process.
+
+```{r}
+par(mfrow=c(1,3))
+
+plot(hatvalues(diag_mod), main="Leverage (Hat Values)", ylab="h_i")
+plot(rstudent(diag_mod), main="Externally Studentized Residuals")
+plot(cooks.distance(diag_mod), main="Cook's Distance", ylab="D_i")
+
+par(mfrow=c(1,1))
+
+```
+
+Variance inflation factors were computed, which reports generalized VIFs for multi–degree-of-freedom predictors and rescales them for comparability through the adjusted GVIF measure. The adjusted GVIF values for nearly all predictors—including the categorical council district variables—are close to 1, indicating negligible multicollinearity. The primary exception is start_ts, which displays an adjusted GVIF consistent with moderate collinearity, reflecting its inherent correlation with temporal patterns and trip duration. Overall, multicollinearity is not a substantive concern in the model, though the timestamp variable remains structurally redundant and may warrant careful handling depending on subsequent model refinements.
+
+```{r}
+vif(diag_mod)
+```
+Although several predictors encode temporal context (season, day of week, time of day), the dataset is not collected sequentially in time, and individual micromobility trips do not form a time series. Autocorrelation diagnostics, such as the Durbin–Watson test, require that observations be ordered and dependent across successive time points, a condition not satisfied here. Because the residuals do not correspond to a temporal sequence and no model structure implies serial dependence, correlated-error diagnostics are not appropriate in this setting.
+
+The Box–Cox procedure applied to the untransformed response produced an estimated optimal $\lambda \approx$ 0.14. Because the log transformation corresponds to $ \lambda = $ 0, and the profile likelihood is typically very flat near its maximum, values in this range are considered statistically indistinguishable from zero. Thus, there is no strong evidence supporting an alternative power transformation, and the log-response model remains an appropriate and interpretable choice.
+
+```{r}
+### Box–Cox Transformation Check
+M0_raw <- lm(exp(log_tripdistance) ~ ., data = traindf)
+
+# Box–Cox over a broad range
+bc <- boxcox(M0_raw, lambda = seq(-2, 2, by = 0.1))
+
+# Best lambda value
+lambda_hat <- bc$x[which.max(bc$y)]
+lambda_hat
+```
+```{r}
+# saving RDS objects with end_ts removed accordingly
+saveRDS(traindf, "traindf.rds")
+saveRDS(testdf, "testdf.rds")
+```
+
+
