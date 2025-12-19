@@ -64,9 +64,3 @@ Results Summary
 - All linear models exhibit systematic residual curvature:
   → the true mean function is nonlinear.
 
-----------------------------------------
-Repository Purpose
-This repo documents a full linear-modeling pipeline for a large urban
-mobility dataset and provides a reproducible structure for future modeling
-extensions (e.g., GAMs, splines, nonlinear ML methods).
-
