@@ -1,0 +1,306 @@
+---
+title: "WilloughbyHW5"
+author: "Bryant Willoughby"
+date: "2025-10-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+```
+
+# Problem 1
+For Question 2 in Homework 4, check for influential points. 
+
+Note: I include previous work from Question 2 in Homework 4 first:
+
+## Load the Data and Fit Models
+
+`teengamb` contains information about a study of teenage gambling in Britain. It contains 47 rows and 5 columns. To predict expenditures from all other available variables, we fit the following two linear regressions: 
+
+$$ \text{response } Y_{org}:= gamble \sim sex + status + income + verbal \\  \text{response } log(Y_{org}) := log(gamble + 1) \sim  sex + status + income + verbal$$
+
+```{r}
+# help(teengamb)
+data(teengamb)
+head(teengamb)
+```
+
+```{r}
+fit2 <- lm(log(gamble + 1) ~ sex + status + income + verbal, data = teengamb)
+summary(fit2)
+```
+Now focus on the regression model with the response $log(Y_{org}) = log(gamble + 1)$
+
+- check the normality assumption 
+- check for outliers 
+
+
+I first plotted a histogram of the residuals, overlaying a density curve. It is unimodal with a slight left-skew. Additional checking is required for a conclusive determination about normality of the errors. Next, I plot the sorted residuals: $\hat{\epsilon}_{[i]}$ against the theoretical normal quantiles: $u_i = \Phi^{-1}(\frac{i}{n+1})$ for $i = 1, \ldots, n=47$. There appears to be a small and random deviation between these quantities, as seen by the points following an approximately linear trend. 
+
+The Shapiro-Wilk test for normality assumes the following hypotheses: $H_o: \epsilon_i \text{ are normally distributed}$ versus $H_a: \epsilon_i \text{ are not normally distributed}$. Given the non-extreme test statistic ($w \approx 0.98$) and sufficiently large p-value ($p \approx 0.44$), there is not evidence to suggest a violation of the normality condition. Note that for the Shapiro-Wilk test, concerns about statistical power and its sensitivity to sample size motivate checking normality through additional methods, as done above with supporting evidence that draws the same conclusion.
+
+```{r}
+# normality assumption 
+
+#histogram of residuals 
+hist(fit2$residual, freq = F, main = "Histogram of Residuals", xlab = "Resdiuals")
+lines(density(fit2$residual))
+
+#qq-plot
+qqnorm(fit2$residual, ylab = "Residuals")
+qqline(fit2$residual)
+
+#shapiro-wilk test 
+shapiro.test(fit2$residual)
+
+```
+
+Next, I check for outliers. Outliers are unusual points that do not fit the model well. To distinguish between outliers and large residuals, we exclude point i, recompute $\hat{\beta}_{(i)}$ and hence $\hat{y}_{(i)}\hat{X_i^T\hat{\beta}}_{(i)}$. We conclude $i$ is an outlier if $|y_i = \hat{y}_{(i)}|$ is 'large.' To quantify 'large', we use the (externally) studentized residuals as shown below, with the derivations taken to be true: 
+
+$$\begin{align*} \text{ Externally Studentized Residuals: } t_i &:= \frac{y_i - \hat{y}_{(i)}}{\hat{\sigma}_{(i)}\sqrt{1 + X_i^T(X_{(i)}^TX_{(i)})^{-1}X_i}} \\ &= r_i (\frac{n - (p + 1) - 1}{n - (p + 1) - r_i^2})^{1/2} \\ &\text{ where } r_i = \frac{\hat{\epsilon_i}}{\hat{\sigma}\sqrt{1 - h_i}} \\ &\text{ Note that } t_i \sim t_{n - (p + 1) - 1} \text{ under } H_o: i_{th} \text{ observation not an outlier} \end{align*}$$
+
+First, I plot all $t_i, i \in {1, \ldots, 47}$ against the respective observations. I flag any values for which $|t_i| \ge 1.75$. The five observations which meet this threshold are highlighted in blue. They represent the most extreme $t_i$ values; in other words, these are the observations with the most extreme deviations between $y_i$ and $\hat{y}_{(i)}$. These are potential outliers to explore further. 
+
+```{r}
+ti <- rstudent(fit2)
+thr <- 1.75
+
+plot(
+  ti,
+  pch = 19, col = "gray30",
+  main = "Externally Studentized Residuals",
+  xlab = "Observation index",
+  ylab = "Externally studentized residual", 
+  ylim = c(-3,3)
+)
+abline(h = c(-thr, thr), col = "red", lty = 2, lwd = 1)
+
+idx <- which(abs(ti) >= thr)
+points(idx, ti[idx], pch = 19, col = "blue")
+pos <- ifelse(ti[idx] >= 0, 3, 1)  # label above if positive, below if negative
+text(idx, ti[idx], labels = idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+```
+
+Next, I assess whether any of the (above) candidate observations are formally outliers. For each observation $i$, I compare $|t_i|$ with $t^{\alpha/2}_{n - (p + 1) - 1}$. Following this test, observation 23 is the only point deemed an outlier at the $\alpha = 0.05$ significance level. This is shown in the below plot. 
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05 # default significance level 
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = "Externally Studentized Residual", 
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit - 1, crit + 1))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+While conducting the outlier detection test for all observations simultaneously, in practice, we will reject too many points. Furthermore: 
+
+$$\text{ Type I Error } = P_{H_o}(\text{reject at least one test)} \\ \le \sum_iP_{H_o}(\text{reject test i}) \\ = n\alpha$$
+Thus, the Bonferroni correction appropriately controls for the Type I Error by testing each hypothesis at the $\alpha/n$ significance level. In doing so, observation 23 is no longer deemed an outlier. In fact, the critical value threshold is too large for any point to be deemed an outlier under the fitted model. While this provides contradictory results, I have shown the implication of not properly controlling for the Type I Error Rate.  
+
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05
+alpha_bonf <- alpha / n
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha_bonf)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha_bonf/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = sprintf("Externally Studentized Residuals (Bonferroni α/n = %.4f)", alpha_bonf),
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit, crit))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+Note: This is the new part of the assignment where I check for influential points: 
+
+An influential point is one whose removal from the dataset would cause a large change in the fit. Cook's distance combines the residual and leverage effect in a single statistic: 
+
+$$
+\begin{align*}
+D_i &= \frac{(\hat{y} - \hat{y}_{(i)})^{T} (\hat{y} - \hat{y}_{(i)})}{(p + 1)\hat{\sigma}^2} \\
+&= \frac{(\hat{\beta} - \hat{\beta}_{(i)})^{T} X^{T} X (\hat{\beta} - \hat{\beta}_{(i)})}{(p + 1)\hat{\sigma}^2} \\
+&= \frac{1}{p + 1} r_i^2 \frac{h_i}{1 - h_i}
+\end{align*}
+$$
+
+Below is a plot of the half-normal quantiles versus the cook's distance for each point. There are two potential outliers, observations five and six, which fall beyond 2 half-normal quantiles from zero. 
+
+```{r}
+cook <- cooks.distance(fit2)
+halfnorm(cook, ylab = "Cook's distance")
+abline(v = 2, lty = 2, col = "red")
+```
+
+After fitting the new model without observations five and six, the residual standard error decreases (from 1.085 to 1.033). This new model also has an improved and higher multiple $R^2$ value (0.5206 to 0.5669). This shows that excluding these two observations changes, and from a preliminary check, in fact improves the model fit. The estimated coefficients across both fitted models have the same sign, and there are marginal differences as seen below. Since the model fit is changed by excluding observations five and six, these are potential influential points. It takes a domain expert to determine whether the observed change in model fit warrants removing these points for more appropriate inference and subsequent analysis. 
+
+```{r}
+fit2.b <- lm(log(gamble + 1) ~ sex + status + income + verbal, 
+             data = teengamb[-c(5,6),])
+summary(fit2.b)
+coef(fit2)
+coef(fit2.b)
+coef(fit2) - coef(fit2.b)
+```
+
+# Problem 2 
+Using the `divusa` data: 
+
+`divusa(faraway)`: Divorce rates in the USA from 1920-1996; a data frame with 77 observations and seven variables 
+
+```{r}
+# help(divusa)
+data(divusa)
+head(divusa)
+```
+
+- Fit a regression model with `divorce` as the response and `unemployed`, `femlab`, `marriage`, `birth`, and `military` as predictors. Compute the condition numbers and interpret their meanings. 
+
+```{r}
+result <- lm(divorce ~ unemployed + femlab + marriage + birth + military, data = divusa)
+summary(result)
+```
+The condition number helps to assess collinearity among the predictors in the fitted model. It is defined as follows: 
+
+$$\text{ Condition Number (of) } X^TX:= k = \sqrt{\frac{\lambda_1}{\lambda_{p+1}}} \\ \text{where } \lambda_1: \text{ largest eigenvalue and } \lambda_2: \text{ smallest eigenvalue}$$
+
+A large condition number indicates evidence of collinearity among predictors. A general rule of thumb says $k > 30$ indicates sufficiently large evidence for a strong presence of collinearity. Thus, here (k = 25), there is not strong evidence of multicollinearity among the predictors. 
+
+```{r}
+#condition number
+  #large k (> 30) --> presence of collinearity 
+X <- model.matrix(result)[,-1] #exclude intercept col 
+e <- eigen(t(X) %*% X)
+max(round(sqrt(e$val[1]/e$val), 3))
+```
+- For the same model, compute the VIFs. Is there evidence that collinearity causes some predictors not to be significant? Explain. 
+
+The variance inflation factor (VIF) is a metric used to assess collinearity among predictors in the fitted model. It comes from the following formulation: 
+
+$$\text{ Let } S_{xj} = \sum_{i}(x_{ij} - \bar{x}_j)^2. \text{ Then } \\ Var(\hat{\beta}) = \sigma^2 \frac{1}{1 - R^2_j}\frac{1}{S_{xj}} \\  \text{ where VIF} := \frac{1}{1 - R^2_j}$$
+
+A 'large' VIF indicates strong evidence of collinearity among the predictors. Here, the highest VIF value corresponds to `femlab`, but it is only 3.613, so there is not sufficient evidence to suggest strong collinearity among the predictors. 
+
+Under the fitted model, `unemployed` and `military` are the only insignificant predictors at the 0.05 significance level when testing for a nonzero effect. In fact, the magnitude of the p-values are related to the VIF values. That is, the larger VIF values correspond to smaller p-values, and hence more evidence to suggest a constituent nonzero effect. This suggests that more collinear predictors are more likely to have a significant (nonzero) effect, a property that should be examined further to assess the validity of these hypothesis tests.  
+
+```{r}
+#variance inflation factor (VIF)
+  #large VIF (>10) --> presence of collinearity 
+round(vif(X), 3)
+summary(result)$coefficients[,4]
+```
+
+- Does the removal of insignificant predictors from the model reduce the collinearity? Investigate. 
+
+After fitting the new model, removing the previously insignificant predictors, all of the remaining predictors still appear respectively significant. 
+
+```{r}
+result2 <- lm(divorce ~ femlab + marriage + birth, data = divusa)
+summary(result2)
+```
+
+Under this new fitted model, the condition number is still below 30 and the VIF values are all well below 10. Thus, there is still not any strong evidence to suggest collinearity among predictors under this new fitted model, as was seen even in the above model where there were insignificant predictors. 
+
+```{r}
+#condition number
+  #large k (> 30) --> presence of collinearity 
+X2 <- model.matrix(result2)[,-1] #exclude intercept col 
+e2 <- eigen(t(X2) %*% X2)
+round(sqrt(e2$val[1]/e2$val), 3)
+
+#variance inflation factor (VIF)
+  #large VIF (>10) --> presence of collinearity 
+round(vif(X2), 3)
+
+```
+
+# Problem 3
+For the `longley` data, fit a model with `Employed` as the response and the other variables as predictors. 
+
+`longley(datasets)`: A macroeconomic data set which provides a well-known example for a highly collinear regression; data frame contains 7 economical variables, observed yearly from 1947 to 1962 (n = 16). 
+
+```{r}
+help(longley)
+data(longley)
+head(longley)
+```
+
+```{r}
+result3 <- lm(Employed ~ ., data = longley)
+summary(result3)
+```
+- Compute and comment on the condition numbers 
+
+A large condition number indicates evidence of collinearity among predictors. A general rule of thumb says $k > 30$ indicates sufficiently large evidence for a strong presence of collinearity. Thus, here (k = 25), there is extremely strong evidence of multicollinearity among the predictors. 
+
+```{r}
+#condition number
+  #large k (> 30) --> presence of collinearity 
+X3 <- model.matrix(result3)[,-1] #exclude intercept col 
+e3 <- eigen(t(X3) %*% X3)
+max(round(sqrt(e3$val[1]/e3$val), 3))
+```
+- Compute and comment on the correlations between the predictors
+
+All predictors show near-perfect ($r \approx 1$) pairwise correlation, with the exception of `Armed.Forces` ($r \approx 0$) which does not show any pairwise correlation with the other predictors. 
+
+```{r}
+#correlation matrix
+round(cor(X3)[,-7])
+```
+
+
+- Compute the variance inflation factors
+
+Excluding `Armed.Forces`, all other variables have VIF values larager than 10, suggesting strong evidence of multicollinearity among these predictors. 
+
+```{r}
+#variance inflation factor (VIF)
+  #large VIF (>10) --> presence of collinearity 
+round(vif(X3 ), 3)
+```
+
+
+

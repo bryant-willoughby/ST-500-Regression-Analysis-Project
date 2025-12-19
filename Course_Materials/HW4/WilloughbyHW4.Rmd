@@ -1,0 +1,248 @@
+---
+title: "WilloughbyHW4"
+author: "Bryant Willoughby"
+date: "2025-10-09"
+output:
+  html_document:
+    df_print: paged
+---
+
+# Homework 4
+
+Note: Display only the plots that are relevant to the questions. Present your diagnostics in a logical order. 
+
+```{r}
+# Load data library
+library(faraway)
+```
+
+# Load the Data and Fit Models
+
+
+`teengamb` contains information about a study of teenage gambling in Britain. It contains 47 rows and 5 columns. To predict expenditures from all other available variables, we fit the following two linear regressions: 
+
+$$ \text{response } Y_{org}:= gamble \sim sex + status + income + verbal \\  \text{response } log(Y_{org}) := log(gamble + 1) \sim  sex + status + income + verbal$$
+
+```{r}
+# help(teengamb)
+data(teengamb)
+head(teengamb)
+```
+
+```{r}
+fit1 <- lm(gamble ~ sex + status + income + verbal, data = teengamb)
+summary(fit1)
+```
+```{r}
+fit2 <- lm(log(gamble + 1) ~ sex + status + income + verbal, data = teengamb)
+summary(fit2)
+```
+
+
+# Problem 1
+Perform regression diagnostics on these two models and compare the answers to the following questions based on the two models.
+
+For models 1 and 2, we assume the following: 
+
+$$\epsilon \stackrel{\text{iid}}{\sim} N(0,\sigma^2I) \Leftrightarrow \\ i) \text{ }E(\epsilon|X) = 0 \\
+ii) \text{ }Var(\epsilon|X) = \sigma^2I \\ iii) \text{ } \epsilon's \text{ are independent and identically distributed}$$
+
+For this problem, I check conditions i) and ii) with the following procedures: 
+
+- check the existence of patterns in the residuals against fitted values. Are the residuals centered at 0 in all areas of fitted values? 
+- Check the constant variance assumption for the errors
+
+
+For model 1, the residuals vs. fitted plot shows a fanning effect where residuals are more spread out about zero for larger fitted values. 
+
+To check linearity, and hence the zero mean assumption for the residuals, I fit the following model: $\hat{\epsilon} \sim \hat{Y} + \hat{Y^2}$. The linear ($p \approx 0.03$) and quadratic ($p \approx 0.02$) term are both significant. That is, there is evidence to suggest deviation from the linearity assumption in favor of a higher-order (quadratic) effect.
+
+To check constant the constant error variance assumption, I fit the following model: $|\hat{\epsilon}| \sim \hat{Y}$. The significant slope term ($p \approx 0.009$) provides evidence against constant variance in favor of heteroscedasticity.
+
+
+```{r}
+# linearity & constant variance checking (model 1)
+fit.vals = fit1$fitted 
+res.vals = fit1$residual 
+
+
+#residuals vs fitted values 
+plot(fit.vals, res.vals, main = "Residuals vs. Fitted Plot", 
+       xlab = "Fitted", ylab = "Residuals")
+abline(h = 0)
+
+paste("Linearity (and hence residual mean zero) assumption checking:")
+summary(lm(res.vals ~ fit.vals + I(fit.vals^2)))
+paste("Constant error variance assumption checking:")
+summary(lm(abs(res.vals) ~ fit.vals))
+```
+
+For model 2, the residuals vs. fitted plot shows an even distribution (scatter) of residuals according to the range of fitted values.
+
+To check linearity, and hence the zero mean assumption for the residuals, I fit the following model: $\hat{\epsilon} \sim \hat{Y} + \hat{Y^2}$. Since the quadratic term is insignificant ($p \approx 0.66$) there is not evidence to suggest deviation from the linearity assumption in favor of a higher-order (quadratic) effect.
+
+To check constant the constant error variance assumption, I fit the following model: $|\hat{\epsilon}| \sim \hat{Y}$. The insignificant slope term ($p \approx 0.97$) does not provide evidence to suggest non-constant variance. 
+
+```{r}
+# constant variance checking (model 2)
+fit.vals = fit2$fitted 
+res.vals = fit2$residual 
+
+
+#residuals vs fitted values 
+plot(fit.vals, res.vals, main = "Residuals vs. Fitted Plot", 
+       xlab = "Fitted", ylab = "Residuals")
+abline(h = 0)
+
+paste("Linearity (and hence residual mean zero) assumption checking:")
+summary(lm(res.vals ~ fit.vals + I(fit.vals^2)))
+paste("Constant error variance assumption checking:")
+summary(lm(abs(res.vals) ~ fit.vals))
+```
+
+# Problem 2
+Now focus on the regression model with the response $log(Y_{org}) = log(gamble + 1)$
+
+- check the normality assumption 
+- check for outliers 
+
+
+I first plotted a histogram of the residuals, overlaying a density curve. It is unimodal with a slight left-skew. Additional checking is required for a conclusive determination about normality of the errors. Next, I plot the sorted residuals: $\hat{\epsilon}_{[i]}$ against the theoretical normal quantiles: $u_i = \Phi^{-1}(\frac{i}{n+1})$ for $i = 1, \ldots, n=47$. There appears to be a small and random deviation between these quantities, as seen by the points following an approximately linear trend. 
+
+The Shapiro-Wilk test for normality assumes the following hypotheses: $H_o: \epsilon_i \text{ are normally distributed}$ versus $H_a: \epsilon_i \text{ are not normally distributed}$. Given the non-extreme test statistic ($w \approx 0.98$) and sufficiently large p-value ($p \approx 0.44$), there is not evidence to suggest a violation of the normality condition. Note that for the Shapiro-Wilk test, concerns about statistical power and its sensitivity to sample size motivate checking normality through additional methods, as done above with supporting evidence that draws the same conclusion.
+
+```{r}
+# normality assumption 
+
+#histogram of residuals 
+hist(fit2$residual, freq = F, main = "Histogram of Residuals", xlab = "Resdiuals")
+lines(density(fit2$residual))
+
+#qq-plot
+qqnorm(fit2$residual, ylab = "Residuals")
+qqline(fit2$residual)
+
+#shapiro-wilk test 
+shapiro.test(fit2$residual)
+
+```
+
+Next, I check for outliers. Outliers are unusual points that do not fit the model well. To distinguish between outliers and large residuals, we exclude point i, recompute $\hat{\beta}_{(i)}$ and hence $\hat{y}_{(i)}\hat{X_i^T\hat{\beta}}_{(i)}$. We conclude $i$ is an outlier if $|y_i = \hat{y}_{(i)}|$ is 'large.' To quantify 'large', we use the (externally) studentized residuals as shown below, with the derivations taken to be true: 
+
+$$\begin{align*} \text{ Externally Studentized Residuals: } t_i &:= \frac{y_i - \hat{y}_{(i)}}{\hat{\sigma}_{(i)}\sqrt{1 + X_i^T(X_{(i)}^TX_{(i)})^{-1}X_i}} \\ &= r_i (\frac{n - (p + 1) - 1}{n - (p + 1) - r_i^2})^{1/2} \\ &\text{ where } r_i = \frac{\hat{\epsilon_i}}{\hat{\sigma}\sqrt{1 - h_i}} \\ &\text{ Note that } t_i \sim t_{n - (p + 1) - 1} \text{ under } H_o: i_{th} \text{ observation not an outlier} \end{align*}$$
+
+First, I plot all $t_i, i \in {1, \ldots, 47}$ against the respective observations. I flag any values for which $|t_i| \ge 1.75$. The five observations which meet this threshold are highlighted in blue. They represent the most extreme $t_i$ values; in other words, these are the observations with the most extreme deviations between $y_i$ and $\hat{y}_{(i)}$. These are potential outliers to explore further. 
+
+```{r}
+ti <- rstudent(fit2)
+thr <- 1.75
+
+plot(
+  ti,
+  pch = 19, col = "gray30",
+  main = "Externally Studentized Residuals",
+  xlab = "Observation index",
+  ylab = "Externally studentized residual", 
+  ylim = c(-3,3)
+)
+abline(h = c(-thr, thr), col = "red", lty = 2, lwd = 1)
+
+idx <- which(abs(ti) >= thr)
+points(idx, ti[idx], pch = 19, col = "blue")
+pos <- ifelse(ti[idx] >= 0, 3, 1)  # label above if positive, below if negative
+text(idx, ti[idx], labels = idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+```
+
+
+Next, I assess whether any of the (above) candidate observations are formally outliers. For each observation $i$, I compare $|t_i|$ with $t^{\alpha/2}_{n - (p + 1) - 1}$. Following this test, observation 23 is the only point deemed an outlier at the $\alpha = 0.05$ significance level. This is shown in the below plot. 
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05 # default significance level 
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = "Externally Studentized Residual", 
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit - 1, crit + 1))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+While conducting the outlier detection test for all observations simultaneously, in practice, we will reject too many points. Furthermore: 
+
+$$\text{ Type I Error } = P_{H_o}(\text{reject at least one test)} \\ \le \sum_iP_{H_o}(\text{reject test i}) \\ = n\alpha$$
+Thus, the Bonferroni correction appropriately controls for the Type I Error by testing each hypothesis at the $\alpha/n$ significance level. In doing so, observation 23 is no longer deemed an outlier. In fact, the critical value threshold is too large for any point to be deemed an outlier under the fitted model. While this provides contradictory results, I have shown the implication of not properly controlling for the Type I Error Rate.  
+
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05
+alpha_bonf <- alpha / n
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha_bonf)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha_bonf/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = sprintf("Externally Studentized Residuals (Bonferroni α/n = %.4f)", alpha_bonf),
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit, crit))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

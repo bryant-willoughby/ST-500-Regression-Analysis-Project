@@ -1,0 +1,661 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={WilloughbyHW4},
+  pdfauthor={Bryant Willoughby},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{WilloughbyHW4}
+\author{Bryant Willoughby}
+\date{2025-10-09}
+
+\begin{document}
+\maketitle
+
+\section{Homework 4}\label{homework-4}
+
+Note: Display only the plots that are relevant to the questions. Present
+your diagnostics in a logical order.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load data library}
+\FunctionTok{library}\NormalTok{(faraway)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'faraway' was built under R version 4.4.3
+\end{verbatim}
+
+\section{Load the Data and Fit
+Models}\label{load-the-data-and-fit-models}
+
+\texttt{teengamb} contains information about a study of teenage gambling
+in Britain. It contains 47 rows and 5 columns. To predict expenditures
+from all other available variables, we fit the following two linear
+regressions:
+
+\[ \text{response } Y_{org}:= gamble \sim sex + status + income + verbal \\  \text{response } log(Y_{org}) := log(gamble + 1) \sim  sex + status + income + verbal\]
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# help(teengamb)}
+\FunctionTok{data}\NormalTok{(teengamb)}
+\FunctionTok{head}\NormalTok{(teengamb)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   sex status income verbal gamble
+## 1   1     51   2.00      8    0.0
+## 2   1     28   2.50      8    0.0
+## 3   1     37   2.00      6    0.0
+## 4   1     28   7.00      4    7.3
+## 5   1     65   2.00      8   19.6
+## 6   1     61   3.47      6    0.1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fit1 }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(gamble }\SpecialCharTok{\textasciitilde{}}\NormalTok{ sex }\SpecialCharTok{+}\NormalTok{ status }\SpecialCharTok{+}\NormalTok{ income }\SpecialCharTok{+}\NormalTok{ verbal, }\AttributeTok{data =}\NormalTok{ teengamb)}
+\FunctionTok{summary}\NormalTok{(fit1)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = gamble ~ sex + status + income + verbal, data = teengamb)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -51.082 -11.320  -1.451   9.452  94.252 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  22.55565   17.19680   1.312   0.1968    
+## sex         -22.11833    8.21111  -2.694   0.0101 *  
+## status        0.05223    0.28111   0.186   0.8535    
+## income        4.96198    1.02539   4.839 1.79e-05 ***
+## verbal       -2.95949    2.17215  -1.362   0.1803    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 22.69 on 42 degrees of freedom
+## Multiple R-squared:  0.5267, Adjusted R-squared:  0.4816 
+## F-statistic: 11.69 on 4 and 42 DF,  p-value: 1.815e-06
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{fit2 }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(}\FunctionTok{log}\NormalTok{(gamble }\SpecialCharTok{+} \DecValTok{1}\NormalTok{) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ sex }\SpecialCharTok{+}\NormalTok{ status }\SpecialCharTok{+}\NormalTok{ income }\SpecialCharTok{+}\NormalTok{ verbal, }\AttributeTok{data =}\NormalTok{ teengamb)}
+\FunctionTok{summary}\NormalTok{(fit2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = log(gamble + 1) ~ sex + status + income + verbal, 
+##     data = teengamb)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.35012 -0.56865  0.00413  0.71512  1.90319 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept)  1.71620    0.82240   2.087   0.0430 *  
+## sex         -0.87120    0.39268  -2.219   0.0320 *  
+## status       0.02983    0.01344   2.219   0.0320 *  
+## income       0.21565    0.04904   4.398 7.33e-05 ***
+## verbal      -0.26165    0.10388  -2.519   0.0157 *  
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 1.085 on 42 degrees of freedom
+## Multiple R-squared:  0.5206, Adjusted R-squared:  0.475 
+## F-statistic:  11.4 on 4 and 42 DF,  p-value: 2.347e-06
+\end{verbatim}
+
+\section{Problem 1}\label{problem-1}
+
+Perform regression diagnostics on these two models and compare the
+answers to the following questions based on the two models.
+
+For models 1 and 2, we assume the following:
+
+\[\epsilon \stackrel{\text{iid}}{\sim} N(0,\sigma^2I) \Leftrightarrow \\ i) \text{ }E(\epsilon|X) = 0 \\
+ii) \text{ }Var(\epsilon|X) = \sigma^2I \\ iii) \text{ } \epsilon's \text{ are independent and identically distributed}\]
+
+For this problem, I check conditions i) and ii) with the following
+procedures:
+
+\begin{itemize}
+\tightlist
+\item
+  check the existence of patterns in the residuals against fitted
+  values. Are the residuals centered at 0 in all areas of fitted values?
+\item
+  Check the constant variance assumption for the errors
+\end{itemize}
+
+For model 1, the residuals vs.~fitted plot shows a fanning effect where
+residuals are more spread out about zero for larger fitted values.
+
+To check linearity, and hence the zero mean assumption for the
+residuals, I fit the following model:
+\(\hat{\epsilon} \sim \hat{Y} + \hat{Y^2}\). The linear
+(\(p \approx 0.03\)) and quadratic (\(p \approx 0.02\)) term are both
+significant. That is, there is evidence to suggest deviation from the
+linearity assumption in favor of a higher-order (quadratic) effect.
+
+To check constant the constant error variance assumption, I fit the
+following model: \(|\hat{\epsilon}| \sim \hat{Y}\). The significant
+slope term (\(p \approx 0.009\)) provides evidence against constant
+variance in favor of heteroscedasticity.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# linearity \& constant variance checking (model 1)}
+\NormalTok{fit.vals }\OtherTok{=}\NormalTok{ fit1}\SpecialCharTok{$}\NormalTok{fitted }
+\NormalTok{res.vals }\OtherTok{=}\NormalTok{ fit1}\SpecialCharTok{$}\NormalTok{residual }
+
+
+\CommentTok{\#residuals vs fitted values }
+\FunctionTok{plot}\NormalTok{(fit.vals, res.vals, }\AttributeTok{main =} \StringTok{"Residuals vs. Fitted Plot"}\NormalTok{, }
+       \AttributeTok{xlab =} \StringTok{"Fitted"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-5-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{paste}\NormalTok{(}\StringTok{"Linearity (and hence residual mean zero) assumption checking:"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Linearity (and hence residual mean zero) assumption checking:"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(}\FunctionTok{lm}\NormalTok{(res.vals }\SpecialCharTok{\textasciitilde{}}\NormalTok{ fit.vals }\SpecialCharTok{+} \FunctionTok{I}\NormalTok{(fit.vals}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = res.vals ~ fit.vals + I(fit.vals^2))
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -51.959  -7.639  -2.795   3.473  90.186 
+## 
+## Coefficients:
+##                Estimate Std. Error t value Pr(>|t|)  
+## (Intercept)    3.422476   4.204807   0.814   0.4201  
+## fit.vals      -0.717893   0.316388  -2.269   0.0282 *
+## I(fit.vals^2)  0.011795   0.004711   2.504   0.0161 *
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 20.74 on 44 degrees of freedom
+## Multiple R-squared:  0.1247, Adjusted R-squared:  0.0849 
+## F-statistic: 3.134 on 2 and 44 DF,  p-value: 0.05341
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{paste}\NormalTok{(}\StringTok{"Constant error variance assumption checking:"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Constant error variance assumption checking:"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(}\FunctionTok{lm}\NormalTok{(}\FunctionTok{abs}\NormalTok{(res.vals) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ fit.vals))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = abs(res.vals) ~ fit.vals)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -24.944  -7.411  -2.467   3.409  68.590 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)   
+## (Intercept)   9.3303     2.8789   3.241  0.00224 **
+## fit.vals      0.2645     0.0968   2.732  0.00895 **
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 15.02 on 45 degrees of freedom
+## Multiple R-squared:  0.1423, Adjusted R-squared:  0.1232 
+## F-statistic: 7.466 on 1 and 45 DF,  p-value: 0.008952
+\end{verbatim}
+
+For model 2, the residuals vs.~fitted plot shows an even distribution
+(scatter) of residuals according to the range of fitted values.
+
+To check linearity, and hence the zero mean assumption for the
+residuals, I fit the following model:
+\(\hat{\epsilon} \sim \hat{Y} + \hat{Y^2}\). Since the quadratic term is
+insignificant (\(p \approx 0.66\)) there is not evidence to suggest
+deviation from the linearity assumption in favor of a higher-order
+(quadratic) effect.
+
+To check constant the constant error variance assumption, I fit the
+following model: \(|\hat{\epsilon}| \sim \hat{Y}\). The insignificant
+slope term (\(p \approx 0.97\)) does not provide evidence to suggest
+non-constant variance.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# constant variance checking (model 2)}
+\NormalTok{fit.vals }\OtherTok{=}\NormalTok{ fit2}\SpecialCharTok{$}\NormalTok{fitted }
+\NormalTok{res.vals }\OtherTok{=}\NormalTok{ fit2}\SpecialCharTok{$}\NormalTok{residual }
+
+
+\CommentTok{\#residuals vs fitted values }
+\FunctionTok{plot}\NormalTok{(fit.vals, res.vals, }\AttributeTok{main =} \StringTok{"Residuals vs. Fitted Plot"}\NormalTok{, }
+       \AttributeTok{xlab =} \StringTok{"Fitted"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-6-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{paste}\NormalTok{(}\StringTok{"Linearity (and hence residual mean zero) assumption checking:"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Linearity (and hence residual mean zero) assumption checking:"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(}\FunctionTok{lm}\NormalTok{(res.vals }\SpecialCharTok{\textasciitilde{}}\NormalTok{ fit.vals }\SpecialCharTok{+} \FunctionTok{I}\NormalTok{(fit.vals}\SpecialCharTok{\^{}}\DecValTok{2}\NormalTok{)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = res.vals ~ fit.vals + I(fit.vals^2))
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -2.29195 -0.56134  0.01941  0.74038  1.90835 
+## 
+## Coefficients:
+##               Estimate Std. Error t value Pr(>|t|)
+## (Intercept)    0.18893    0.54074   0.349    0.728
+## fit.vals      -0.22175    0.52842  -0.420    0.677
+## I(fit.vals^2)  0.04936    0.11314   0.436    0.665
+## 
+## Residual standard error: 1.058 on 44 degrees of freedom
+## Multiple R-squared:  0.004306,   Adjusted R-squared:  -0.04095 
+## F-statistic: 0.09515 on 2 and 44 DF,  p-value: 0.9094
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{paste}\NormalTok{(}\StringTok{"Constant error variance assumption checking:"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] "Constant error variance assumption checking:"
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(}\FunctionTok{lm}\NormalTok{(}\FunctionTok{abs}\NormalTok{(res.vals) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ fit.vals))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = abs(res.vals) ~ fit.vals)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -0.7875 -0.5635 -0.1763  0.5921  1.5537 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)    
+## (Intercept) 0.788325   0.202794   3.887 0.000331 ***
+## fit.vals    0.003324   0.090409   0.037 0.970830    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 0.6626 on 45 degrees of freedom
+## Multiple R-squared:  3.005e-05,  Adjusted R-squared:  -0.02219 
+## F-statistic: 0.001352 on 1 and 45 DF,  p-value: 0.9708
+\end{verbatim}
+
+\section{Problem 2}\label{problem-2}
+
+Now focus on the regression model with the response
+\(log(Y_{org}) = log(gamble + 1)\)
+
+\begin{itemize}
+\tightlist
+\item
+  check the normality assumption
+\item
+  check for outliers
+\end{itemize}
+
+I first plotted a histogram of the residuals, overlaying a density
+curve. It is unimodal with a slight left-skew. Additional checking is
+required for a conclusive determination about normality of the errors.
+Next, I plot the sorted residuals: \(\hat{\epsilon}_{[i]}\) against the
+theoretical normal quantiles: \(u_i = \Phi^{-1}(\frac{i}{n+1})\) for
+\(i = 1, \ldots, n=47\). There appears to be a small, random deviation
+between these quantities, as seen by the points following an
+approximately linear trend.
+
+The Shapiro-Wilk test for normality assumes the following hypotheses:
+\(H_o: \epsilon_i \text{ are normally distributed}\) versus
+\(H_a: \epsilon_i \text{ are not normally distributed}\). Given the
+non-extreme test statistic (\(w \approx 0.98\)) and sufficiently large
+p-value (\(p \approx 0.44\)), there is evidence to suggest a violation
+of the normality condition. Note that for the Shapiro-Wilk test,
+concerns about statistical power and its sensitivity to sample size
+motivate checking normality through additional methods, as done above.
+
+While the conclusions are contradictory, I would argue that the
+normality assumption is approximately met, as described by my
+observations regarding the histogram of residuals and normal QQ-plot.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# normality assumption }
+
+\CommentTok{\#histogram of residuals }
+\FunctionTok{hist}\NormalTok{(fit2}\SpecialCharTok{$}\NormalTok{residual, }\AttributeTok{freq =}\NormalTok{ F, }\AttributeTok{main =} \StringTok{"Histogram of Residuals"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"Resdiuals"}\NormalTok{)}
+\FunctionTok{lines}\NormalTok{(}\FunctionTok{density}\NormalTok{(fit2}\SpecialCharTok{$}\NormalTok{residual))}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-7-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#qq{-}plot}
+\FunctionTok{qqnorm}\NormalTok{(fit2}\SpecialCharTok{$}\NormalTok{residual, }\AttributeTok{ylab =} \StringTok{"Residuals"}\NormalTok{)}
+\FunctionTok{qqline}\NormalTok{(fit2}\SpecialCharTok{$}\NormalTok{residual)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-7-2.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\#shapiro{-}wilk test }
+\FunctionTok{shapiro.test}\NormalTok{(fit2}\SpecialCharTok{$}\NormalTok{residual)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  Shapiro-Wilk normality test
+## 
+## data:  fit2$residual
+## W = 0.97609, p-value = 0.4418
+\end{verbatim}
+
+Next, I check for outliers. Outliers are unusual points that do not fit
+the model well. To distinguish between outliers and large residuals, we
+exclude point i, recompute \(\hat{\beta}_{(i)}\) and hence
+\(\hat{y}_{(i)}\hat{X_i^T\hat{\beta}}_{(i)}\). We conclude \(i\) is an
+outlier if \(|y_i = \hat{y}_{(i)}|\) is `large.' To quantify `large', we
+use the (externally) studentized residuals as shown below, with the
+derivations taken to be true:
+
+\[\begin{align*} \text{ Externally Studentized Residuals: } t_i &:= \frac{y_i - \hat{y}_{(i)}}{\hat{\sigma}_{(i)}\sqrt{1 + X_i^T(X_{(i)}^TX_{(i)})^{-1}X_i}} \\ &= r_i (\frac{n - (p + 1) - 1}{n - (p + 1) - r_i^2})^{1/2} \\ &\text{ where } r_i = \frac{\hat{\epsilon_i}}{\hat{\sigma}\sqrt{1 - h_i}} \\ &\text{ Note that } t_i \sim t_{n - (p + 1) - 1} \text{ under } H_o: i_{th} \text{ observation not an outlier} \end{align*}\]
+
+First, I plot all \(t_i, i \in {1, \ldots, 47}\) against the respective
+observations. I flag any values for which \(|t_i| \ge 1.75\). The five
+observations which meet this threshold are highlighted in blue. They
+represent the most extreme \(t_i\) values; in other words, these are the
+observations with the most extreme deviations between \(y_i\) and
+\(\hat{y}_{(i)}\). These are potential outliers to explore further.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ti }\OtherTok{\textless{}{-}} \FunctionTok{rstudent}\NormalTok{(fit2)}
+\NormalTok{thr }\OtherTok{\textless{}{-}} \FloatTok{1.75}
+
+\FunctionTok{plot}\NormalTok{(}
+\NormalTok{  ti,}
+  \AttributeTok{pch =} \DecValTok{19}\NormalTok{, }\AttributeTok{col =} \StringTok{"gray30"}\NormalTok{,}
+  \AttributeTok{main =} \StringTok{"Externally Studentized Residuals"}\NormalTok{,}
+  \AttributeTok{xlab =} \StringTok{"Observation index"}\NormalTok{,}
+  \AttributeTok{ylab =} \StringTok{"Externally studentized residual"}\NormalTok{, }
+  \AttributeTok{ylim =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\DecValTok{3}\NormalTok{,}\DecValTok{3}\NormalTok{)}
+\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{thr, thr), }\AttributeTok{col =} \StringTok{"red"}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{, }\AttributeTok{lwd =} \DecValTok{1}\NormalTok{)}
+
+\NormalTok{idx }\OtherTok{\textless{}{-}} \FunctionTok{which}\NormalTok{(}\FunctionTok{abs}\NormalTok{(ti) }\SpecialCharTok{\textgreater{}=}\NormalTok{ thr)}
+\FunctionTok{points}\NormalTok{(idx, ti[idx], }\AttributeTok{pch =} \DecValTok{19}\NormalTok{, }\AttributeTok{col =} \StringTok{"blue"}\NormalTok{)}
+\NormalTok{pos }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ti[idx] }\SpecialCharTok{\textgreater{}=} \DecValTok{0}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{1}\NormalTok{)  }\CommentTok{\# label above if positive, below if negative}
+\FunctionTok{text}\NormalTok{(idx, ti[idx], }\AttributeTok{labels =}\NormalTok{ idx, }\AttributeTok{pos =}\NormalTok{ pos, }\AttributeTok{cex =} \FloatTok{0.8}\NormalTok{, }\AttributeTok{col =} \StringTok{"blue"}\NormalTok{, }\AttributeTok{offset =} \FloatTok{0.4}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-8-1.pdf}}
+
+Next, I assess whether any of the (above) candidate observations are
+formally outliers. For each observation \(i\), I compare \(|t_i|\) with
+\(t^{\alpha/2}_{n - (p + 1) - 1}\). Following this test, observation 23
+is the only point deemed an outlier at the \(\alpha = 0.05\)
+significance level. This is shown in the below plot.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ti }\OtherTok{\textless{}{-}} \FunctionTok{rstudent}\NormalTok{(fit2)}
+\NormalTok{n }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(ti)}
+\NormalTok{df\_t }\OtherTok{\textless{}{-}} \FunctionTok{df.residual}\NormalTok{(fit2) }\SpecialCharTok{{-}} \DecValTok{1} \CommentTok{\# df for externally studentized residuals}
+\NormalTok{alpha }\OtherTok{\textless{}{-}} \FloatTok{0.05} \CommentTok{\# default significance level }
+
+\CommentTok{\# two{-}sided p{-}values and significant indices}
+\NormalTok{pval }\OtherTok{\textless{}{-}} \DecValTok{2} \SpecialCharTok{*} \FunctionTok{pt}\NormalTok{(}\SpecialCharTok{{-}}\FunctionTok{abs}\NormalTok{(ti), }\AttributeTok{df =}\NormalTok{ df\_t)}
+\NormalTok{sig\_idx }\OtherTok{\textless{}{-}} \FunctionTok{which}\NormalTok{(pval }\SpecialCharTok{\textless{}}\NormalTok{ alpha)}
+
+\CommentTok{\# critical value for plotting reference lines}
+\NormalTok{crit }\OtherTok{\textless{}{-}} \FunctionTok{qt}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}}\NormalTok{ alpha}\SpecialCharTok{/}\DecValTok{2}\NormalTok{, }\AttributeTok{df =}\NormalTok{ df\_t)}
+
+\FunctionTok{plot}\NormalTok{(}
+\NormalTok{  ti,}
+  \AttributeTok{pch =} \DecValTok{19}\NormalTok{,}
+  \AttributeTok{col =} \FunctionTok{ifelse}\NormalTok{(}\FunctionTok{seq\_along}\NormalTok{(ti) }\SpecialCharTok{\%in\%}\NormalTok{ sig\_idx, }\StringTok{"blue"}\NormalTok{, }\StringTok{"gray30"}\NormalTok{),}
+  \AttributeTok{main =} \StringTok{"Externally Studentized Residual"}\NormalTok{, }
+  \AttributeTok{xlab =} \StringTok{"Observation index"}\NormalTok{,}
+  \AttributeTok{ylab =} \StringTok{"Externally studentized residual"}\NormalTok{,}
+  \AttributeTok{ylim =} \FunctionTok{range}\NormalTok{(}\FunctionTok{c}\NormalTok{(ti, }\SpecialCharTok{{-}}\NormalTok{crit }\SpecialCharTok{{-}} \DecValTok{1}\NormalTok{, crit }\SpecialCharTok{+} \DecValTok{1}\NormalTok{))}
+\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{crit, crit), }\AttributeTok{col =} \StringTok{"red"}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{, }\AttributeTok{lwd =} \DecValTok{1}\NormalTok{)}
+
+\CommentTok{\# label only significant points}
+\ControlFlowTok{if}\NormalTok{ (}\FunctionTok{length}\NormalTok{(sig\_idx)) \{}
+\NormalTok{  pos }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ti[sig\_idx] }\SpecialCharTok{\textgreater{}=} \DecValTok{0}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+  \FunctionTok{text}\NormalTok{(sig\_idx, ti[sig\_idx], }\AttributeTok{labels =}\NormalTok{ sig\_idx, }\AttributeTok{pos =}\NormalTok{ pos, }\AttributeTok{cex =} \FloatTok{0.8}\NormalTok{, }\AttributeTok{col =} \StringTok{"blue"}\NormalTok{, }\AttributeTok{offset =} \FloatTok{0.4}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-9-1.pdf}}
+
+While conducting the outlier detection test for all observations
+simultaneously, in practice, we will reject too many points.
+Furthermore:
+
+\[\text{ Type I Error } = P_{H_o}(\text{reject at least one test)} \\ \le \sum_iP_{H_o}(\text{reject test i}) \\ = n\alpha\]
+Thus, the Bonferroni correction appropriately controls for the Type I
+Error by testing each hypothesis at the \(\alpha/n\) significance level.
+In doing so, observation 23 is no longer deemed an outlier. In fact, the
+critical value threshold is too large for any point to be deemed an
+outlier under the fitted model. While this provides contradictory
+results, I have shown the implication of not properly controlling for
+the Type I Error Rate.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ti }\OtherTok{\textless{}{-}} \FunctionTok{rstudent}\NormalTok{(fit2)}
+\NormalTok{n }\OtherTok{\textless{}{-}} \FunctionTok{length}\NormalTok{(ti)}
+\NormalTok{df\_t }\OtherTok{\textless{}{-}} \FunctionTok{df.residual}\NormalTok{(fit2) }\SpecialCharTok{{-}} \DecValTok{1} \CommentTok{\# df for externally studentized residuals}
+\NormalTok{alpha }\OtherTok{\textless{}{-}} \FloatTok{0.05}
+\NormalTok{alpha\_bonf }\OtherTok{\textless{}{-}}\NormalTok{ alpha }\SpecialCharTok{/}\NormalTok{ n}
+
+\CommentTok{\# two{-}sided p{-}values and significant indices}
+\NormalTok{pval }\OtherTok{\textless{}{-}} \DecValTok{2} \SpecialCharTok{*} \FunctionTok{pt}\NormalTok{(}\SpecialCharTok{{-}}\FunctionTok{abs}\NormalTok{(ti), }\AttributeTok{df =}\NormalTok{ df\_t)}
+\NormalTok{sig\_idx }\OtherTok{\textless{}{-}} \FunctionTok{which}\NormalTok{(pval }\SpecialCharTok{\textless{}}\NormalTok{ alpha\_bonf)}
+
+\CommentTok{\# critical value for plotting reference lines}
+\NormalTok{crit }\OtherTok{\textless{}{-}} \FunctionTok{qt}\NormalTok{(}\DecValTok{1} \SpecialCharTok{{-}}\NormalTok{ alpha\_bonf}\SpecialCharTok{/}\DecValTok{2}\NormalTok{, }\AttributeTok{df =}\NormalTok{ df\_t)}
+
+\FunctionTok{plot}\NormalTok{(}
+\NormalTok{  ti,}
+  \AttributeTok{pch =} \DecValTok{19}\NormalTok{,}
+  \AttributeTok{col =} \FunctionTok{ifelse}\NormalTok{(}\FunctionTok{seq\_along}\NormalTok{(ti) }\SpecialCharTok{\%in\%}\NormalTok{ sig\_idx, }\StringTok{"blue"}\NormalTok{, }\StringTok{"gray30"}\NormalTok{),}
+  \AttributeTok{main =} \FunctionTok{sprintf}\NormalTok{(}\StringTok{"Externally Studentized Residuals (Bonferroni α/n = \%.4f)"}\NormalTok{, alpha\_bonf),}
+  \AttributeTok{xlab =} \StringTok{"Observation index"}\NormalTok{,}
+  \AttributeTok{ylab =} \StringTok{"Externally studentized residual"}\NormalTok{,}
+  \AttributeTok{ylim =} \FunctionTok{range}\NormalTok{(}\FunctionTok{c}\NormalTok{(ti, }\SpecialCharTok{{-}}\NormalTok{crit, crit))}
+\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \FunctionTok{c}\NormalTok{(}\SpecialCharTok{{-}}\NormalTok{crit, crit), }\AttributeTok{col =} \StringTok{"red"}\NormalTok{, }\AttributeTok{lty =} \DecValTok{2}\NormalTok{, }\AttributeTok{lwd =} \DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW4_files/figure-latex/unnamed-chunk-10-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# label only significant points}
+\ControlFlowTok{if}\NormalTok{ (}\FunctionTok{length}\NormalTok{(sig\_idx)) \{}
+\NormalTok{  pos }\OtherTok{\textless{}{-}} \FunctionTok{ifelse}\NormalTok{(ti[sig\_idx] }\SpecialCharTok{\textgreater{}=} \DecValTok{0}\NormalTok{, }\DecValTok{3}\NormalTok{, }\DecValTok{1}\NormalTok{)}
+  \FunctionTok{text}\NormalTok{(sig\_idx, ti[sig\_idx], }\AttributeTok{labels =}\NormalTok{ sig\_idx, }\AttributeTok{pos =}\NormalTok{ pos, }\AttributeTok{cex =} \FloatTok{0.8}\NormalTok{, }\AttributeTok{col =} \StringTok{"blue"}\NormalTok{, }\AttributeTok{offset =} \FloatTok{0.4}\NormalTok{)}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+
+\end{document}

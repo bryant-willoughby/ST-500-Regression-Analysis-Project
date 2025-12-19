@@ -1,0 +1,159 @@
+---
+title: "WilloughbyHW3"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r}
+# Load data library
+library(faraway)
+```
+
+# Problem 1
+Using the dataset `gala` discussed in Chapter 2, consider a regression model with `Endemics` (Y) as the response and `Area` ($X_1$), `Elevation` ($X_2$), `Nearest` ($X_3$), `Scruz` ($X_4$), and `Adjacent` ($X_5$) as predictors.   
+
+```{r}
+# help(gala)
+data(gala)
+head(gala)
+```
+
+```{r}
+# fit full model 
+fit1 <- lm(Endemics ~ Area + Elevation + Nearest + Scruz + Adjacent, gala)
+print(summary(fit1))
+```
+
+### Problem 1a
+For the regression model above, what are the t-test results (i.e. test statistic value, p-value, and your conclusion) for testing $H_o: \beta_{Nearest} = 0 \text{ with } \alpha = 0.05.$ Find the $95\%$ confidence intervals for $\beta_{Nearest}$. 
+
+The test statistic is given by $t_{24} \approx 0.119$. The two-sided p-value is $P(|t_{24}| \ge 0.119) \approx 0.91.$ This means that, under the null hypothesis $H_0: \beta_{\text{Nearest}} = 0$, observing a test statistic as (or more) extreme as $t_{24} = 0.119$ is very likely. Since $p = 0.91 \gg \alpha = 0.05$, we fail to reject $H_0$. In other words, the data provide no evidence for a (nonzero) linear effect of `Nearest` on `Endemic`. The 95% confidence interval for $\beta_{\text{Nearest}}$ is seen below which contains zero, consistent with the hypothesis test conclusion. 
+
+```{r}
+cat("----------- Testing Nearest Coefficient -----------\n")
+summary(fit1)$coefficients["Nearest",]
+cat("----------- 95% CI for Nearest Coefficient -----------\n")
+confint(fit1)["Nearest",]
+```
+
+### Problem 1b 
+For $\alpha = 0.05$, conduct a test for $H_o: \beta_{Nearest} = \beta_{Scruz} = 0 \implies H_a: \text{at least one } \beta_i \ne 0, i \in (1,2).$ What would be the p-value for this test? Based on your analysis, do you feel any of these two predictors have an effect on the response? Without drawing the $95\%$ simultaneous confidence region for $(\beta_{Nearest}, \beta_{Scruz})$, please make a guess whether (0,0) would be inside this confidence region or not. Briefly explain. 
+
+The test statistic is given by $F_{2,24} = 1.25$. The p-value is $P(F_{2,24} > 1.25) \approx 0.30.$ This means that, under the null hypothesis $H_o: \beta_{Nearest} = \beta_{Scruz} = 0$, observing a test statistic as (or more) extreme than $F_{2,24} = 1.25$ is likely. Since $p = 0.30 \gt \alpha = 0.05$, we fail to reject $H_0$. In other words, the data provide no evidence that neither `Nearest` nor `Scruz` have a (nonzero) linear effect on `Endemic`.  Thus, I would guess that their simultaneous confidence interval contains (0,0), following from the above hypothesis test conclusion. 
+
+```{r}
+# F-test (General Linear Test)
+h0 <- lm(Endemics ~ Area + Elevation + Adjacent, gala)
+# fit1 <- lm(Endemics ~ Area + Elevation + Nearest + Scruz + Adjacent, gala)
+anova(h0, fit1)
+
+```
+### Problem 1c
+What would be the $H_0$ and $H_A$ if you wish to claim that an island with a largest highest elevation level tends to have more endemic species. Is this a one-sided or two-sided test? What would be the corresponding t-test statistics, p-value, and conclusion for your test if the $\alpha$-level is 0.01?  
+
+This problem is expressed by the following: 
+
+$$ H_o: \beta_{Elevation} = 0 \text{ versus } H_a:\beta_{Elevation} > 0 $$
+
+The test statistic is given by $t_{24} = 7.73$. The one-sided (upper-tailed) p-value is $P(t_{24} \ge 7.73) \approx 2.9 * 10^{-8}$ This means that, under the null hypothesis $H_0: \beta_{\text{Elevation}} = 0$, observing a test statistic greater than (or equal to) $t_{24} = 7.73$ is very unlikely. Since $p \ll \alpha = 0.01$, we reject $H_0$. In other words, the data provide evidence for a positive (linear) effect of `Elevation` on `Endemic`.
+
+```{r}
+t.val <- summary(fit1)$coefficients["Elevation","t value"]
+cat("----------- T-Statistic -----------\n")
+print(t.val)
+cat("----------- p-value -----------\n")
+pt(t.val, 24, lower.tail = F)
+```
+
+# Problem 2 
+We use the `sat` data for subsequent analysis. 
+
+```{r}
+# help(sat)
+data(sat)
+str(sat); head(sat); hist(sat$total, main = "Histogram of total", xlab = "total")
+```
+
+
+### Problem 2a
+Fit a model with `total` (Y) sat score as the response and `takers` $(X_1)$, `ratio` $(X_2)$, and `salary` $(X_3)$ as predictors. Comment on the goodness of fit. 
+
+According to the (adj)-$R^2$ value, approximately 81.24% of the variability in `total` can be explained by the association with its predictors under the fitted model. This indicates a strong relationship between the chosen predictors and SAT performance, though other unmeasured factors still contribute to the remaining unexplained variation. 
+  
+The RMSE ($\hat{\sigma}$) of 32.41 means that, after accounting for the effects of the proportion of test takers, student–teacher ratio, and teacher salary, the model predicts state average SAT total scores with a typical error of about 32 points.
+
+```{r}
+fit2 <- lm(total ~ takers + ratio + salary, sat)
+summary(fit2)
+```
+
+### Problem 2b
+Using the R output from (a), test the hypothesis that the variable `ratio` (average pupil/teacher ratio) has an effect on the SAT scores. Specify $H_0$ and $H_A$, the test statistic value, p-value, and your conclusion. 
+
+This problem is expressed by the following: 
+
+$$ H_o: \beta_{ratio} = 0 \text{ versus } H_a:\beta_{ratio} \ne 0 $$
+
+The test statistic is given by $t_{46} \approx -2.19$. The two-sided p-value is $P(|t_{46}| \ge 2.19) \approx 0.034$ This means that, under the null hypothesis $H_0: \beta_{\text{ratio}} = 0$, observing a test statistic as (or more) extreme than $t_{46} = -2.19$ is unlikely. Since $p = 0.034 \lt \alpha = 0.05$, we reject $H_0$. In other words, the data provide evidence for a (nonzero) linear effect of `ratio` on `total`.
+
+```{r}
+cat("----------- Testing ratio Coefficient -----------\n")
+summary(fit2)$coefficients["ratio",]
+```
+
+### Problem 2c 
+For the model in (a), what would be the $H_0$ and $H_A$ if you wish to claim that a higher value of `ratio` tends to lead to a lower sat score. What would be the numerical value of the test statistics, p-value, and conclusion for your test?  
+
+This problem is expressed by the following: 
+
+$$ H_o: \beta_{ratio} = 0 \text{ versus } H_a:\beta_{ratio} \lt 0 $$
+
+The test statistic is given by $t_{46} = -2.19$. The one-sided p-value is $P(t_{46} \lt -2.19) \approx 0.017$ This means that, under the null hypothesis $H_0: \beta_{\text{ratio}} = 0$, observing a test statistic less than $t_{46} = -2.19$ is unlikely. Since $p = 0.017 \lt \alpha = 0.05$, we reject $H_0$. In other words, the data provide evidence that a higher value of `ratio` tends to lead to a lower `sat` score.
+
+```{r}
+cat("----------- Testing one-sided (lower-tail) Ratio Coef -----------\n")
+t.val <- summary(fit2)$coefficients["ratio","t value"]
+pt(t.val, df = 46, lower.tail = T)
+```
+### Problem 2d
+For the model in (a), test the hypothesis $\beta_{takers} = \beta_{ratio} = \beta_{salary} = 0.$ Explain in words what this hypothesis means. Specify the test statistic value, p-value, and your conclusion. 
+
+The test statistic is given by $F_{3,46} \approx 71.72$. The p-value is $P(F_{3,46} > 71.72) \approx 2.26*10^{-17}$ This means that, under the null hypothesis $H_o: \beta_{takers} = \beta_{ratio} = \beta_{salary} = 0$, observing a test statistic as (or more) extreme than $F_{3,46} = 71.72$ is extremely unlikely. Since $p \ll \alpha = 0.05$, we reject $H_0$. In other words, there is evidence  to suggest at least one of the predictors from the previous model (in a) has a significant (linear) effect on `total`. 
+
+```{r}
+cat("---------- F-Statistic (and df) ---------\n")
+f.stat <- summary(fit2)$fstatistic
+print(f.stat)
+cat("---------- p-value ------------\n")
+pf(71.72, df1 = 3, df2 = 46, lower.tail = F)
+```
+
+### Problem 2e
+Now add `expend` $(X_4)$ (current expenditure per pupil) to the model and fit it. Comment on the estimated regression coefficients of `takers`, `ratio`, and `salary`, their significance and the goodness of fit as compared to the results form the model in question (a). 
+
+The regression coefficients for predictors in both model (a) and (e) are the same sign but different values. See the summary table below to observe how each of these coefficients shrink or tend closer to 0 after adding `expend` to the new model in (e).
+
+According to the (adj)-$R^2$ value, approximately 80.9% of the variability in `total` can be explained by the association with its predictors under the fitted model. This indicates a strong (linear) relationship between the chosen predictors and SAT performance, though other unmeasured factors still contribute to the remaining unexplained variation. Note the slight (1%) decrease as compared to the simpler model in (a). 
+  
+The RMSE ($\hat{\sigma}$) changed from 32.41 to 32.7, i.e. a typical error in `total` slightly increases with the inclusion of the `expend` variable.
+
+```{r}
+cat("---------- (Linear) Model: total = takers + ratio + salary -----------\n")
+coefs2 <- summary(fit2)$coefficients; print(coefs2)
+cat("\n---------- (Linear) Model: total = takers + ratio + salary + expend -----\n")
+fit3 <- lm(total ~ takers + ratio + salary + expend, sat)
+summary(fit3)
+```
+
+### Problem 2f
+Under the model of question (e), test the hypothesis $\beta_{takers} = \beta_{ratio} = \beta_{salary} = 0$ and show your test results. Based on your entire analysis, do you feel any of these predictors have an effect on the response? 
+
+The test statistic is given by $F_{3,45} \approx 58.12$. The p-value is $P(F_{3,45} > 58.12) = 1.62*10^{-15}$ This means that, under the null hypothesis $H_o: \beta_{takers} = \beta_{ratio} = \beta_{salary} = 0$, observing a test statistic as (or more) extreme than $F_{3,45} = 58.12$ is extremely unlikely. Since $p \ll \alpha = 0.05$, we reject $H_0$. In other words, there is evidence to suggest at least one of the predictors: `takers`, `ratio`, and/or `salary` have a significant (linear) effect on `total`. 
+
+```{r}
+h0 <- lm(total ~ expend, sat)
+# fit3 <- lm(total ~ takers + ratio + salary + expend, sat)
+anova(h0, fit3)
+```
+

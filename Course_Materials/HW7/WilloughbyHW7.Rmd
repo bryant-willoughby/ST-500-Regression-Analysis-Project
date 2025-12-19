@@ -1,0 +1,298 @@
+---
+title: "WilloughbyHW7"
+author: "Bryant Willoughby"
+date: "2025-10-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(nlme)
+library(splines)
+library(MASS)
+```
+
+# Problem 1 
+The `aatemp` data come from the U.S. Historical Climatology Network. They are the annual mean temperatures (degrees F) in Ann Arbor, Michigan going back about 150 years. 
+
+Data Description: The data contains annual mean temperatures in Ann Arbor, Michigan. The data comes from the U.S. Historical Climatology Network. It contains 115 observations on two variables (`year` and `temp`):
+
+```{r}
+# help(aatemp)
+data(aatemp)
+attach(aatemp)
+head(aatemp)
+```
+
+- Is there a linear trend?
+
+From the simple scatterlpot, there appears to be a linear trend between `temp` and `year`. 
+
+```{r}
+plot(aatemp$year, aatemp$temp, 
+     main = "Annual Mean Temperatures across Years", 
+     xlab = "Year", ylab = "Temperature")
+abline(lm(temp ~ year, data = aatemp), col = "blue")
+```
+
+More formally, the fitted SLR model shows a significant linear effect between `temp` and `year`.  
+
+```{r}
+model.SLR <- lm(temp ~ year, data = aatemp)
+summary(model.SLR)
+```
+
+- Observations in successive years may be correlated. Fit a model that estimates this correlation. Does this change your opinion about the trend?
+
+```{r}
+model.GLS <- gls(temp ~ year, 
+                 correlation = corAR1(form = ~ year), 
+                 data = aatemp)
+summary(model.GLS)
+```
+
+Under the autoregressive model as seen above, $\rho$ is used to test correlated errors. Formally, we are testing $H_o: \rho = 0 \text{ vs } H_a: \rho \ne 0$. Assuming this test uses the $\alpha = 0.05$ significance level, we can use a $100(1 - (\alpha = 0.05)) = 95\%$ confidence level to address the same statistical question. That is, the below $95\%$ CI for $\rho$ is strictly positive (and does not contain zero). Thus, we reject $H_o$ and there is significant evidence to suggest the errors are correlated. In particular, the AR1 model structure suggests that observations in successive years are correlated. 
+
+```{r}
+intervals(model.GLS)
+```
+
+- Fit a polynomial model with degree 10 and use backward elimination to reduce the degree of the model. Plot your fitted model on top of the data. Use this model to predict the temperature in 2020. 
+
+Starting with degree 10, I use backward elimination, simplifying polynomial models with non-significant highest-order terms. The polynomial regression model with degree = 5 is the first instance where the highest-order term is significant. While the second-order term under this fitted model is not significant, and the fourth-order term is only significant at the 0.1 significance level, we follow a hierarchical pattern. That is, it's best practice to retain lower-order terms, even if not (or less) significant, when a higher order term is significant. 
+
+
+```{r}
+# summary(lm(temp ~ poly(year, 10)))
+# summary(lm(temp ~ poly(year, 9)))
+# summary(lm(temp ~ poly(year, 8)))
+# summary(lm(temp ~ poly(year, 7)))
+# summary(lm(temp ~ poly(year, 6)))
+# summary(lm(temp ~ poly(year, 5)))
+# summary(lm(temp ~ poly(year, 4)))
+
+deg <- 10:5
+pval <- sapply(deg, function(i) {
+  fit <- lm(temp ~ poly(year, i), data = aatemp)
+  coef(summary(fit))[i + 1, 4] #implicit p-value return
+})
+
+data.frame(degree = deg, p.value = as.numeric(pval), 
+           significant = ifelse(as.numeric(pval) < 0.05, T, F))
+
+model.poly <- lm(temp ~ poly(year, 5))
+summary(model.poly)
+
+```
+Under the fitted polynomial regression model (with degree = 5), the predicted temperature in 2020 is approximately 60 degrees in F. 
+
+```{r}
+predict(model.poly, newdata = data.frame(year = 2020))
+```
+
+- Suppose someone claims that the temperature was constant until 1930 and then began a linear trend. Fit a model corresponding to this claim. What does the fitted model say about this claim? 
+
+To evaluate the claim that temperature was constant until 1930 and then began a linear trend, we fit a piecewise (segmented) regression model. The model assumes a flat mean level before 1930 and a linear increase (or decrease) in temperature after 1930. In this specification, the slope parameter after 1930 measures the rate of temperature change per year once the trend begins.
+
+The fitted model can be written in closed form as:
+
+$$
+\text{temp}_t =
+\begin{cases}
+\beta_0, & \text{if } \text{year} < 1930, \\
+\beta_0 + \beta_1(\text{year} - 1930), & \text{if } \text{year} \ge 1930.
+\end{cases}
+$$
+
+Equivalently, using the positive-part operator $(x)_+ = \max(0, x)$, this can be expressed as:
+
+$$
+\text{temp}_t = \beta_0 + \beta_1(\text{year} - 1930)_+ + \varepsilon_t, \\ 
+\text{where } \beta_0 \text{ represents the mean temperature before 1930, } \\ 
+\beta_1 \text{ represents the annual rate of change in temperature after 1930} \\ \text{ and } 
+\varepsilon_t \text{ denotes random error.}
+$$
+
+
+The fitted piecewise model is:
+
+$$
+\widehat{\text{temp}}_t = 47.43 + 0.01497(\text{year} - 1930)_+.
+$$
+
+Before 1930, temperature is constant at $\text{temp}_t = 47.43$. After 1930, temperature increases by about $0.015$ units per year.
+
+The slope term ($ \approx 0.015$) is positive and significant, supporting a linear upward trend after 1930. The intercept reflects the baseline mean before 1930 and does not indicate a trend.
+
+```{r}
+# construct piecewise variable 
+aatemp$after1930 <- pmax(0, aatemp$year - 1930)
+
+# fit piecewise linear model 
+model.piecewise <- lm(temp ~ after1930, data = aatemp)
+summary(model.piecewise)
+
+```
+
+- Make a cubic spline fit with six basis functions evenly spaced on the range. Plot the fit in comparison to the previous fits. Does this model fit better than the straight-line model? 
+
+We fit a cubic regression spline on the year scale without rescaling.  
+A cubic spline (degree = 3, order = 4) produces six basis functions when two evenly spaced interior knots are placed within the observed year range.  
+These interior knots, $k_1$ and $k_2$, divide the interval $[y_{\min}, y_{\max}]$ into three equal segments, giving the spline evenly distributed flexibility across time.  
+The open uniform knot vector is
+
+$$
+\text{knots} = \{y_{\min}, y_{\min}, y_{\min}, y_{\min},
+k_1, k_2,
+y_{\max}, y_{\max}, y_{\max}, y_{\max}\}.
+$$
+
+The fitted model is
+
+$$
+\text{temp}_t = \beta_0 + \sum_{j=1}^{6} \beta_j B_j(\text{year}_t) + \varepsilon_t.
+$$
+where  
+- $\text{temp}_t$ is the observed temperature at time $t$,  
+- $\beta_0$ is the intercept term,  
+- $B_j(\text{year}_t)$ are the six cubic spline basis functions evaluated at year $t$,  
+- $\beta_j$ are the coefficients corresponding to each basis function, and  
+- $\varepsilon_t$ is the random error term, assumed to have mean zero and constant variance.  
+
+
+One of the spline basis coefficients is reported as `NA` because the spline basis functions sum to one, making the intercept a linear combination of them.  
+This perfect multicollinearity causes `lm()` to drop one redundant column automatically.  
+The model fit remains valid, as the effect of the omitted basis function is absorbed into the intercept term.
+
+
+```{r}
+# Compute boundary and interior knots directly on year scale
+yr_min <- min(aatemp$year)
+yr_max <- max(aatemp$year)
+int_knots <- seq(yr_min, yr_max, length.out = 4)[2:3]  # two interior knots
+
+# cubic spline: degree = 3 --> order = 4
+ord <- 4
+knots <- c(rep(yr_min, ord), int_knots, rep(yr_max, ord))
+
+# design matrix (6 basis functions)
+bx <- splineDesign(knots = knots, x = aatemp$year, ord = ord)
+
+# fit model
+m_spline6 <- lm(temp ~ bx, aatemp) 
+summary(m_spline6)
+
+```
+
+While there is a general linear increase in temperature over time, the cubic spline model more accurately reflects the gradual, nonlinear variation present in the data.
+
+```{r}
+# basis functions visual
+matplot(aatemp$year, bx, type = "l",
+        main = "Cubic Spline Basis Functions",
+        xlab = "Year", ylab = "Basis value")
+
+# compare cubic spline fit versus straight-line model 
+matplot(aatemp$year, cbind(aatemp$temp, 
+                           m_spline6$fitted.values, 
+                           model.SLR$fitted.values), 
+        
+        type = "ll", 
+        lwd = c(1,2,2),
+        col = c("black", "purple", "steelblue"), 
+        lty = c(1, 1, 1), 
+        main = "Observed vs Fitted: Spline and SLR",
+        xlab = "Year", ylab = "Temperature")
+
+legend("topleft", 
+       legend = c("Observed", "Spline", "SLR"), 
+       col = c("black", "purple", "steelblue"), 
+       lwd = c(1, 2, 2), 
+       lty = c(1, 1, 1), 
+       bty = "n",
+       cex = 0.85)
+```
+
+Overall, the SLR and polynomial models capture the broad upward trend, but the GLS, piecewise, and spline models better represent the intermediate fluctuations in temperature across years.
+
+
+```{r}
+# Collect fitted values for all models (order matches legend/colors below)
+fits_all <- cbind(
+  model.SLR$fitted.values,      # SLR
+  model.GLS$fitted.values,      # GLS
+  model.poly$fitted.values,     # Polynomial
+  model.piecewise$fitted.values,# Piecewise
+  m_spline6$fitted.values       # Spline
+)
+
+# Observed + all fitted lines
+matplot(aatemp$year, cbind(aatemp$temp, fits_all),
+        type = "ll",
+        lwd  = c(1, 2, 2, 2, 2, 2),
+        col  = c("black", "steelblue", "blue", "forestgreen", "orange", "purple"),
+        lty  = c(1, 1, 1, 1, 1, 1),
+        xlab = "Year", ylab = "Temperature",
+        main = "Observed vs Fitted: SLR, GLS, Polynomial, Piecewise, Spline")
+
+legend("topleft",
+       legend = c("Observed", "SLR", "GLS", "Polynomial", "Piecewise", "Spline"),
+       col    = c("black", "steelblue", "blue", "forestgreen", "orange", "purple"),
+       lwd    = c(1, 2, 2, 2, 2, 2),
+       lty    = c(1, 1, 1, 1, 1, 1),
+       bty    = "n",
+       cex    = 0.8)
+
+```
+
+
+# Problem 2 
+
+Using the `ozone` data, fit a model with `O3` as the response and `temp`, `humidity`, and `ibh` as predictors. Use the Box-Cox method to determine the best transformation on the response. 
+
+Ozone (Description): A study into the relationship between atmospheric ozone concentration and meteorology in the Los Angeles Basin in 1976. This is a dataframe with 330 observations on ten variables.
+
+```{r}
+# help(ozone)
+data(ozone)
+head(ozone)
+```
+
+```{r}
+model <- lm(O3 ~ temp + humidity + ibh, data = ozone)
+summary(model)
+```
+
+The Box-Cox method is a transformation of the response, i.e. $y \rightarrow g_{\lambda}(y)$ such that 
+$$g_{\lambda}(y) =
+\begin{cases}
+\dfrac{y^{\lambda - 1}}{\lambda}, & \lambda \ne 0, \\
+\ln(y), & \lambda = 0.
+\end{cases}$$
+
+Ultimately, the goal is to find $\lambda$ such that $g_{\lambda}(y) \sim X$ follows a linear model, with the proper (regression) assumptions holding. One approach is to minimize the $\text{RSS}_\lambda$ from the fitted model $g_{\lambda}(y) \sim X$. Equivalently, we can instead compute the likelihood of the data using the normal assumption for any given $\lambda$. Then, we choose $\lambda$ to maximize $L(\lambda) = \frac{-n}{2}ln(\frac{RSS_\lambda}{n})$. 
+
+By default, the below plots show the 95% confidence interval for $\lambda$ using the asymptotic distribution of the likelihood. Note that $\lambda = 1$ represents no transformation. Thus, since one is not contained in the below confidence interval, there is evidence to suggest we should transform the response `O3`. For easier interpretation, we can approximate from the below plot and choose $\lambda = 1/3$. 
+
+```{r}
+boxcox(model, plotit = T)
+boxcox(model, plotit = T, lambda = seq(0, 1, 0.05))
+```
+
+Here is the output from the new fitted model with $\lambda = 1/3$ as discussed above. Additional assumption checking should be carried out to ensure this transformation is appropriate and necessary.
+
+```{r}
+transform.model <- lm(O3^(1/3) ~ temp + humidity + ibh, data = ozone)
+summary(transform.model)
+```
+
+
+
+
+
+
+
+
+
+

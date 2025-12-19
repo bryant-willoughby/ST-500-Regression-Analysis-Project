@@ -1,0 +1,2117 @@
+---
+title: "HWs"
+author: "Bryant Willoughby"
+date: "2025-11-21"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# HW 1
+# Problem 1 Instructions
+
+The dataset `teengamb` concerns a study of teenage gambling in Britain. After you install R and the `faraway` package, you can load the faraway package and teengamb data.
+
+1. Make a numerical and graphical summary of the data, commenting on any features that you find interesting. For the variable “sex”, assign the label “male” and “female” and ask R to treat it as a categorical variable before you compute the summary.
+
+Solution to this question should be no longer than 1.5 pages.
+
+2. In your summary, report the means and medians of variables “income” and “gamble”. Please comment on the relative locations of their means and medians, and explain why the means are larger than the medians.
+
+3. How many different values are there for the variable “verbal”? (hint: help(unique))
+Based on the boxplot (and any other ways you can define and explain) of the variable “verbal”, what could be the possible values of outlying verbal scores?
+
+4. Suppose you are interested in how variables, such as “verbal”, “income” and “gamble” differ for different ”sex”. Use numerical and/or graphical tool(s) to summarize the data for this purpose, commenting on any features that you find interesting. Limit the output you present to a quantity that a busy reader would find sufficient to get a basic understanding of your answer.
+
+Hints: Some useful R functions for this homework can be found in the course documents that are available on Canvas. You can always type help(subject) to get detailed help on the subject, e.g. help(plot). Or you can type help.start() to get interactive help with a search engine.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Problem 1: Data loading and factor variable
+
+```{r}
+# Load faraway package and teengamb data
+library(faraway)
+data(teengamb)
+
+# Create factor variable for sex with labels
+teengamb$sex <- factor(teengamb$sex, levels = c(0, 1), labels = c("male", "female"))
+str(teengamb)  # Check structure
+```
+
+# (1) Numerical and graphical summary
+
+
+The summary measures and histograms are provided for the numeric variables. `Status` appears approximately uniform, `verbal` approximately normal, and `income` and `gamble` both right-skewed. There are more male counts (28) versus female counts (19). A pairwise correlation plot among the numeric variables is also provided. `Status` and `verbal` appear most strongly correlated. 
+```{r}
+# Numerical summary for numeric variables
+summary(teengamb[c("status", "income", "verbal", "gamble")])
+
+# Frequency table for sex
+table(teengamb$sex)
+
+# Pairs plot for numeric variables
+pairs(teengamb[c("status", "income", "verbal", "gamble")])
+
+# Histograms for numeric variables
+par(mfrow = c(2, 2))  # Layout for 4 variables
+for (v in c("status", "income", "verbal", "gamble")) {
+  hist(teengamb[[v]], main = paste("Histogram of", v), xlab = v)
+}
+par(mfrow = c(1, 1))  # Reset layout
+```
+
+
+
+# (2) Means and medians of income and gamble
+
+The respective mean and median for `income` and `gamble`variables are provided below. Notice that the mean is pulled towards the right skewness, whereas the median measure is not influenced by this skewness and is therefore smaller in comparison. 
+```{r}
+# Means and medians of income and gamble with descriptive labels
+paste("Mean income:", mean(teengamb$income))
+paste("Median income:", median(teengamb$income))
+paste("Mean gamble:", mean(teengamb$gamble))
+paste("Median gamble:", median(teengamb$gamble))
+```
+
+# (3) Unique values and boxplot for verbal
+
+There are nine unique values for the `verbal` variable. The two possible outlying verbal scores are one and two, as illustrated in the below boxplot. 
+
+```{r}
+# Number of unique values for verbal
+length(unique(teengamb$verbal))
+
+# Boxplot for verbal
+boxplot(teengamb$verbal, main = "Boxplot of Verbal Scores", ylab = "verbal")
+```
+
+# (4) Compare verbal, income, and gamble by sex
+
+The measures below group the `verbal`, `income` and `gamble` variables according to sex. The distributions appear different across sex for all three variables, with a difference in numeric measures (consult summary statistics). The boxplots provide a visual assessment of this information. 
+
+```{r}
+# Numerical summaries of verbal scores by sex
+print("Summary of verbal scores by sex:")
+tapply(teengamb$verbal, teengamb$sex, summary)
+
+# Numerical summaries of income by sex
+print("Summary of income by sex:")
+tapply(teengamb$income, teengamb$sex, summary)
+
+# Numerical summaries of gambling expenditure by sex
+print("Summary of gambling expenditure by sex:")
+tapply(teengamb$gamble, teengamb$sex, summary)
+
+# Boxplots by sex
+par(mfrow = c(1, 3))
+boxplot(verbal ~ sex, data = teengamb, main = "Verbal by Sex")
+boxplot(income ~ sex, data = teengamb, main = "Income by Sex")
+boxplot(gamble ~ sex, data = teengamb, main = "Gamble by Sex")
+par(mfrow = c(1, 1))
+```
+
+# Problem 2
+
+![Problem 2 Solution](Problem2.png)
+
+# Problem 3
+
+![Problem 3 Solution](Problem3.png)
+
+# HW 2
+
+# Problem 1a: Load data and inspect
+
+```{r}
+# Load data
+library(faraway)
+data(uswages)
+# Ensure dataset loaded as object
+str(uswages)
+head(uswages)
+```
+
+```{r}
+# remove experience var vals less than 0
+pos.exper.vals <- uswages$exper >= 0
+uswages <- uswages[pos.exper.vals,]
+
+# Numeric summaries
+cat("Numeric summary (status, wage, educ, exper):\n")
+print(summary(uswages[c("wage", "educ", "exper")]))
+
+```
+
+Notice the relative right skew of `wage`.  
+```{r}
+par(mfrow = c(1, 3))
+hist(uswages$wage, main = "Histogram of wage", xlab = "wage")
+hist(uswages$educ, main = "Histogram of educ", xlab = "educ")
+hist(uswages$exper, main = "Histogram of exper", xlab = "exper")
+par(mfrow = c(1, 1))
+```
+
+# Problem 1a: Fit Regression model 
+
+```{r}
+model <- lm(wage ~ educ + exper, uswages)
+summary(model)
+```
+
+# Problem 1b: $(Adj) R^2$
+13.39% of the variability in `wage` can be explained by the association with its predictors, `education` and `experience`, under the fitted regression model.  
+```{r}
+summary(model)$adj.r.squared
+```
+
+# Problem 1c: Largest Residual 
+
+```{r}
+resid.vals <- residuals(model)
+fitted.vals <- fitted(model)
+
+# index via which.max, then report the rowname (label)
+max_res_index <- which.max(resid.vals)
+obs_label <- rownames(uswages)[max_res_index]
+
+cat("Observation (case number) with largest positive residual:", obs_label, "\n")
+print(uswages[obs_label,])
+cat("Largest positive residual value:", resid.vals[max_res_index], "\n")
+```
+
+# Problem 1d: Means and medians with labels
+
+The mean of the residuals, as expected, is essentially zero. Ordinary least squares (OLS) with an intercept assumes this property. However, the median residual value is approximately -52. That is, the model tends to overpredict for most cases. This suggests a few large positive residuals are balancing many negative residuals. 
+```{r}
+cat(paste("Mean residual:", mean(resid.vals), "\n"))
+cat(paste("Median residual:", median(resid.vals), "\n"))
+```
+
+# Problem 1e: Coefficient Interpretation 
+
+Holding education constant, an additional year of experience predicts a 9.77 unit increase in wage. 
+```{r}
+summary(model)$coefficients
+```
+# problem 1f: Residual Analysis 
+
+The correlation ~9.87e-17 is effectively zero, indicating no linear association between residuals and fitted values. Geometrically, this reflects that the OLS projects y onto the column space of X, so the residual vector is orthogonal to the fitted vector ($X\hat{\beta}$) and hence has a zero inner product. 
+```{r}
+cat(paste("Correlation of residuals with fitted values:", cor(resid.vals, fitted.vals), "\n"))
+
+# plot with large y padding and highlight the observation
+plot(fitted.vals, resid.vals,
+     main = "Residuals vs Fitted (highlight)",
+     xlab = "Fitted values", ylab = "Residuals",
+     ylim = c(min(resid.vals) - 100, max(resid.vals) + 100))
+text(fitted.vals, resid.vals, labels = rownames(uswages), pos = 4, cex = 0.6)
+abline(h = 0, col = "grey")
+```
+
+
+
+# Problem 2 (Unbiasedness of \hat{\sigma^2})
+
+![Figure 1: Problem 2 image](500problem2.png)
+
+
+# Problem 3: Polynomial regression — compare lm() vs direct OLS
+
+```{r}
+set.seed(123) #for reproducibility
+x <- 1:20
+y <- x + rnorm(20)
+plot(x, y, main = "Artificial data: y = x + noise", xlab = "x", ylab = "y")
+```
+
+```{r}
+## helper functions 
+
+poly_design <- function(x, degree) {
+  # Create Vandermonde design matrix: columns 1, x, x^2, ..., x^degree
+  X <- sapply(0:degree, function(d) x^d)
+  X <- as.matrix(X)
+  colnames(X) <- paste0("x^", 0:degree)
+  return(X)
+}
+
+ols_coef <- function(X, y) {
+  # Compute OLS coefficients via normal equations: (X'X)^{-1} X' y
+  X <- as.matrix(X)
+  y <- as.numeric(y)
+  coef <- solve(t(X) %*% X, t(X) %*% y)
+  return(as.numeric(coef))
+}
+```
+
+```{r}
+# initialize results df 
+results <- data.frame(degree = integer(), method = character(), status = character(), stringsAsFactors = F)
+
+for (deg in 1:10){
+  # Iterate polynomial degrees to compare two estimation methods: 
+  # (1) lm() uses raw polynomial terms (I(x^k))
+  # (2) Direect OLS via normal equation 
+  # For each degree: 
+  ## - fit model with lm() and prints coefficients
+  ## - constructs the Vandermonde design matrix X; attempt to compute OLS coefs using solve() 
+  ## - records success or failure (due to singular/ill-conditioned X'X)
+  ## - stops if/when OLS fails
+  
+  # fit with lm() using raw polynomial terms 
+  cat("\n--- Degree", deg, "---\n")
+  formula_terms <- if (deg >= 1) paste0("I(x^", 1:deg, ")", collapse = " + ") else ""
+  lm_formula <- as.formula(paste("y ~", formula_terms))
+  fit_lm <- lm(lm_formula)
+  cat("lm() coefficients:\n")
+  print(coef(fit_lm))
+  
+  # build design matrix and try direct OLS
+  X <- poly_design(x, deg)
+  cat("Trying direct OLS..\n")
+  res_ols <- tryCatch({
+    coefs <- ols_coef(X, y)
+    list(ok = TRUE, coefs = coefs)
+  }, error = function(e) {
+    cat("Direct OLS failed at degree", deg, "with error:\n")
+    cat(e$message, "\n")
+    list(ok = FALSE, coefs = NULL)
+  })
+
+  if (res_ols$ok) {
+    cat("Direct OLS coefficients:\n")
+    print(res_ols$coefs)
+  }
+
+  results <- rbind(results, data.frame(degree = deg, method = "lm", status = "ok", stringsAsFactors = FALSE))
+  results <- rbind(results, data.frame(degree = deg, method = "ols", status = ifelse(res_ols$ok, "ok", "failed"), stringsAsFactors = FALSE))
+
+  if (!res_ols$ok) break
+}
+
+cat("\nSummary of where direct OLS failed (if any):\n")
+print(results)
+
+cat('\nExplanation: Direct OLS can fail because the matrix t(X)%*%X becomes singular or numerically unstable as polynomial degree increases (multicollinearity). lm() uses more stable algorithms and/or (e.g. QR) to avoid this.\n')    
+```
+
+
+# HW 3
+
+```{r}
+# Load data library
+library(faraway)
+```
+
+# Problem 1
+Using the dataset `gala` discussed in Chapter 2, consider a regression model with `Endemics` (Y) as the response and `Area` ($X_1$), `Elevation` ($X_2$), `Nearest` ($X_3$), `Scruz` ($X_4$), and `Adjacent` ($X_5$) as predictors.   
+
+```{r}
+# help(gala)
+data(gala)
+head(gala)
+```
+
+```{r}
+# fit full model 
+fit1 <- lm(Endemics ~ Area + Elevation + Nearest + Scruz + Adjacent, gala)
+print(summary(fit1))
+```
+
+### Problem 1a
+For the regression model above, what are the t-test results (i.e. test statistic value, p-value, and your conclusion) for testing $H_o: \beta_{Nearest} = 0 \text{ with } \alpha = 0.05.$ Find the $95\%$ confidence intervals for $\beta_{Nearest}$. 
+
+The test statistic is given by $t_{24} \approx 0.119$. The two-sided p-value is $P(|t_{24}| \ge 0.119) \approx 0.91.$ This means that, under the null hypothesis $H_0: \beta_{\text{Nearest}} = 0$, observing a test statistic as (or more) extreme as $t_{24} = 0.119$ is very likely. Since $p = 0.91 \gg \alpha = 0.05$, we fail to reject $H_0$. In other words, the data provide no evidence for a (nonzero) linear effect of `Nearest` on `Endemic`. The 95% confidence interval for $\beta_{\text{Nearest}}$ is seen below which contains zero, consistent with the hypothesis test conclusion. 
+
+```{r}
+cat("----------- Testing Nearest Coefficient -----------\n")
+summary(fit1)$coefficients["Nearest",]
+cat("----------- 95% CI for Nearest Coefficient -----------\n")
+confint(fit1)["Nearest",]
+```
+
+### Problem 1b 
+For $\alpha = 0.05$, conduct a test for $H_o: \beta_{Nearest} = \beta_{Scruz} = 0 \implies H_a: \text{at least one } \beta_i \ne 0, i \in (1,2).$ What would be the p-value for this test? Based on your analysis, do you feel any of these two predictors have an effect on the response? Without drawing the $95\%$ simultaneous confidence region for $(\beta_{Nearest}, \beta_{Scruz})$, please make a guess whether (0,0) would be inside this confidence region or not. Briefly explain. 
+
+The test statistic is given by $F_{2,24} = 1.25$. The p-value is $P(F_{2,24} > 1.25) \approx 0.30.$ This means that, under the null hypothesis $H_o: \beta_{Nearest} = \beta_{Scruz} = 0$, observing a test statistic as (or more) extreme than $F_{2,24} = 1.25$ is likely. Since $p = 0.30 \gt \alpha = 0.05$, we fail to reject $H_0$. In other words, the data provide no evidence that neither `Nearest` nor `Scruz` have a (nonzero) linear effect on `Endemic`.  Thus, I would guess that their simultaneous confidence interval contains (0,0), following from the above hypothesis test conclusion. 
+
+```{r}
+# F-test (General Linear Test)
+h0 <- lm(Endemics ~ Area + Elevation + Adjacent, gala)
+# fit1 <- lm(Endemics ~ Area + Elevation + Nearest + Scruz + Adjacent, gala)
+anova(h0, fit1)
+
+```
+### Problem 1c
+What would be the $H_0$ and $H_A$ if you wish to claim that an island with a largest highest elevation level tends to have more endemic species. Is this a one-sided or two-sided test? What would be the corresponding t-test statistics, p-value, and conclusion for your test if the $\alpha$-level is 0.01?  
+
+This problem is expressed by the following: 
+
+$$ H_o: \beta_{Elevation} = 0 \text{ versus } H_a:\beta_{Elevation} > 0 $$
+
+The test statistic is given by $t_{24} = 7.73$. The one-sided (upper-tailed) p-value is $P(t_{24} \ge 7.73) \approx 2.9 * 10^{-8}$ This means that, under the null hypothesis $H_0: \beta_{\text{Elevation}} = 0$, observing a test statistic greater than (or equal to) $t_{24} = 7.73$ is very unlikely. Since $p \ll \alpha = 0.01$, we reject $H_0$. In other words, the data provide evidence for a positive (linear) effect of `Elevation` on `Endemic`.
+
+```{r}
+t.val <- summary(fit1)$coefficients["Elevation","t value"]
+cat("----------- T-Statistic -----------\n")
+print(t.val)
+cat("----------- p-value -----------\n")
+pt(t.val, 24, lower.tail = F)
+```
+
+# Problem 2 
+We use the `sat` data for subsequent analysis. 
+
+```{r}
+# help(sat)
+data(sat)
+str(sat); head(sat); hist(sat$total, main = "Histogram of total", xlab = "total")
+```
+
+
+### Problem 2a
+Fit a model with `total` (Y) sat score as the response and `takers` $(X_1)$, `ratio` $(X_2)$, and `salary` $(X_3)$ as predictors. Comment on the goodness of fit. 
+
+According to the (adj)-$R^2$ value, approximately 81.24% of the variability in `total` can be explained by the association with its predictors under the fitted model. This indicates a strong relationship between the chosen predictors and SAT performance, though other unmeasured factors still contribute to the remaining unexplained variation. 
+  
+The RMSE ($\hat{\sigma}$) of 32.41 means that, after accounting for the effects of the proportion of test takers, student–teacher ratio, and teacher salary, the model predicts state average SAT total scores with a typical error of about 32 points.
+
+```{r}
+fit2 <- lm(total ~ takers + ratio + salary, sat)
+summary(fit2)
+```
+
+### Problem 2b
+Using the R output from (a), test the hypothesis that the variable `ratio` (average pupil/teacher ratio) has an effect on the SAT scores. Specify $H_0$ and $H_A$, the test statistic value, p-value, and your conclusion. 
+
+This problem is expressed by the following: 
+
+$$ H_o: \beta_{ratio} = 0 \text{ versus } H_a:\beta_{ratio} \ne 0 $$
+
+The test statistic is given by $t_{46} \approx -2.19$. The two-sided p-value is $P(|t_{46}| \ge 2.19) \approx 0.034$ This means that, under the null hypothesis $H_0: \beta_{\text{ratio}} = 0$, observing a test statistic as (or more) extreme than $t_{46} = -2.19$ is unlikely. Since $p = 0.034 \lt \alpha = 0.05$, we reject $H_0$. In other words, the data provide evidence for a (nonzero) linear effect of `ratio` on `total`.
+
+```{r}
+cat("----------- Testing ratio Coefficient -----------\n")
+summary(fit2)$coefficients["ratio",]
+```
+
+### Problem 2c 
+For the model in (a), what would be the $H_0$ and $H_A$ if you wish to claim that a higher value of `ratio` tends to lead to a lower sat score. What would be the numerical value of the test statistics, p-value, and conclusion for your test?  
+
+This problem is expressed by the following: 
+
+$$ H_o: \beta_{ratio} = 0 \text{ versus } H_a:\beta_{ratio} \lt 0 $$
+
+The test statistic is given by $t_{46} = -2.19$. The one-sided p-value is $P(t_{46} \lt -2.19) \approx 0.017$ This means that, under the null hypothesis $H_0: \beta_{\text{ratio}} = 0$, observing a test statistic less than $t_{46} = -2.19$ is unlikely. Since $p = 0.017 \lt \alpha = 0.05$, we reject $H_0$. In other words, the data provide evidence that a higher value of `ratio` tends to lead to a lower `sat` score.
+
+```{r}
+cat("----------- Testing one-sided (lower-tail) Ratio Coef -----------\n")
+t.val <- summary(fit2)$coefficients["ratio","t value"]
+pt(t.val, df = 46, lower.tail = T)
+```
+### Problem 2d
+For the model in (a), test the hypothesis $\beta_{takers} = \beta_{ratio} = \beta_{salary} = 0.$ Explain in words what this hypothesis means. Specify the test statistic value, p-value, and your conclusion. 
+
+The test statistic is given by $F_{3,46} \approx 71.72$. The p-value is $P(F_{3,46} > 71.72) \approx 2.26*10^{-17}$ This means that, under the null hypothesis $H_o: \beta_{takers} = \beta_{ratio} = \beta_{salary} = 0$, observing a test statistic as (or more) extreme than $F_{3,46} = 71.72$ is extremely unlikely. Since $p \ll \alpha = 0.05$, we reject $H_0$. In other words, there is evidence  to suggest at least one of the predictors from the previous model (in a) has a significant (linear) effect on `total`. 
+
+```{r}
+cat("---------- F-Statistic (and df) ---------\n")
+f.stat <- summary(fit2)$fstatistic
+print(f.stat)
+cat("---------- p-value ------------\n")
+pf(71.72, df1 = 3, df2 = 46, lower.tail = F)
+```
+
+### Problem 2e
+Now add `expend` $(X_4)$ (current expenditure per pupil) to the model and fit it. Comment on the estimated regression coefficients of `takers`, `ratio`, and `salary`, their significance and the goodness of fit as compared to the results form the model in question (a). 
+
+The regression coefficients for predictors in both model (a) and (e) are the same sign but different values. See the summary table below to observe how each of these coefficients shrink or tend closer to 0 after adding `expend` to the new model in (e).
+
+According to the (adj)-$R^2$ value, approximately 80.9% of the variability in `total` can be explained by the association with its predictors under the fitted model. This indicates a strong (linear) relationship between the chosen predictors and SAT performance, though other unmeasured factors still contribute to the remaining unexplained variation. Note the slight (1%) decrease as compared to the simpler model in (a). 
+  
+The RMSE ($\hat{\sigma}$) changed from 32.41 to 32.7, i.e. a typical error in `total` slightly increases with the inclusion of the `expend` variable.
+
+```{r}
+cat("---------- (Linear) Model: total = takers + ratio + salary -----------\n")
+coefs2 <- summary(fit2)$coefficients; print(coefs2)
+cat("\n---------- (Linear) Model: total = takers + ratio + salary + expend -----\n")
+fit3 <- lm(total ~ takers + ratio + salary + expend, sat)
+summary(fit3)
+```
+
+### Problem 2f
+Under the model of question (e), test the hypothesis $\beta_{takers} = \beta_{ratio} = \beta_{salary} = 0$ and show your test results. Based on your entire analysis, do you feel any of these predictors have an effect on the response? 
+
+The test statistic is given by $F_{3,45} \approx 58.12$. The p-value is $P(F_{3,45} > 58.12) = 1.62*10^{-15}$ This means that, under the null hypothesis $H_o: \beta_{takers} = \beta_{ratio} = \beta_{salary} = 0$, observing a test statistic as (or more) extreme than $F_{3,45} = 58.12$ is extremely unlikely. Since $p \ll \alpha = 0.05$, we reject $H_0$. In other words, there is evidence to suggest at least one of the predictors: `takers`, `ratio`, and/or `salary` have a significant (linear) effect on `total`. 
+
+```{r}
+h0 <- lm(total ~ expend, sat)
+# fit3 <- lm(total ~ takers + ratio + salary + expend, sat)
+anova(h0, fit3)
+```
+
+# Homework 4
+
+Note: Display only the plots that are relevant to the questions. Present your diagnostics in a logical order. 
+
+```{r}
+# Load data library
+library(faraway)
+```
+
+# Load the Data and Fit Models
+
+
+`teengamb` contains information about a study of teenage gambling in Britain. It contains 47 rows and 5 columns. To predict expenditures from all other available variables, we fit the following two linear regressions: 
+
+$$ \text{response } Y_{org}:= gamble \sim sex + status + income + verbal \\  \text{response } log(Y_{org}) := log(gamble + 1) \sim  sex + status + income + verbal$$
+
+```{r}
+# help(teengamb)
+data(teengamb)
+head(teengamb)
+```
+
+```{r}
+fit1 <- lm(gamble ~ sex + status + income + verbal, data = teengamb)
+summary(fit1)
+```
+```{r}
+fit2 <- lm(log(gamble + 1) ~ sex + status + income + verbal, data = teengamb)
+summary(fit2)
+```
+
+
+# Problem 1
+Perform regression diagnostics on these two models and compare the answers to the following questions based on the two models.
+
+For models 1 and 2, we assume the following: 
+
+$$\epsilon \stackrel{\text{iid}}{\sim} N(0,\sigma^2I) \Leftrightarrow \\ i) \text{ }E(\epsilon|X) = 0 \\
+ii) \text{ }Var(\epsilon|X) = \sigma^2I \\ iii) \text{ } \epsilon's \text{ are independent and identically distributed}$$
+
+For this problem, I check conditions i) and ii) with the following procedures: 
+
+- check the existence of patterns in the residuals against fitted values. Are the residuals centered at 0 in all areas of fitted values? 
+- Check the constant variance assumption for the errors
+
+
+For model 1, the residuals vs. fitted plot shows a fanning effect where residuals are more spread out about zero for larger fitted values. 
+
+To check linearity, and hence the zero mean assumption for the residuals, I fit the following model: $\hat{\epsilon} \sim \hat{Y} + \hat{Y^2}$. The linear ($p \approx 0.03$) and quadratic ($p \approx 0.02$) term are both significant. That is, there is evidence to suggest deviation from the linearity assumption in favor of a higher-order (quadratic) effect.
+
+To check constant the constant error variance assumption, I fit the following model: $|\hat{\epsilon}| \sim \hat{Y}$. The significant slope term ($p \approx 0.009$) provides evidence against constant variance in favor of heteroscedasticity.
+
+
+```{r}
+# linearity & constant variance checking (model 1)
+fit.vals = fit1$fitted 
+res.vals = fit1$residual 
+
+
+#residuals vs fitted values 
+plot(fit.vals, res.vals, main = "Residuals vs. Fitted Plot", 
+       xlab = "Fitted", ylab = "Residuals")
+abline(h = 0)
+
+paste("Linearity (and hence residual mean zero) assumption checking:")
+summary(lm(res.vals ~ fit.vals + I(fit.vals^2)))
+paste("Constant error variance assumption checking:")
+summary(lm(abs(res.vals) ~ fit.vals))
+```
+
+For model 2, the residuals vs. fitted plot shows an even distribution (scatter) of residuals according to the range of fitted values.
+
+To check linearity, and hence the zero mean assumption for the residuals, I fit the following model: $\hat{\epsilon} \sim \hat{Y} + \hat{Y^2}$. Since the quadratic term is insignificant ($p \approx 0.66$) there is not evidence to suggest deviation from the linearity assumption in favor of a higher-order (quadratic) effect.
+
+To check constant the constant error variance assumption, I fit the following model: $|\hat{\epsilon}| \sim \hat{Y}$. The insignificant slope term ($p \approx 0.97$) does not provide evidence to suggest non-constant variance. 
+
+```{r}
+# constant variance checking (model 2)
+fit.vals = fit2$fitted 
+res.vals = fit2$residual 
+
+
+#residuals vs fitted values 
+plot(fit.vals, res.vals, main = "Residuals vs. Fitted Plot", 
+       xlab = "Fitted", ylab = "Residuals")
+abline(h = 0)
+
+paste("Linearity (and hence residual mean zero) assumption checking:")
+summary(lm(res.vals ~ fit.vals + I(fit.vals^2)))
+paste("Constant error variance assumption checking:")
+summary(lm(abs(res.vals) ~ fit.vals))
+```
+
+# Problem 2
+Now focus on the regression model with the response $log(Y_{org}) = log(gamble + 1)$
+
+- check the normality assumption 
+- check for outliers 
+
+
+I first plotted a histogram of the residuals, overlaying a density curve. It is unimodal with a slight left-skew. Additional checking is required for a conclusive determination about normality of the errors. Next, I plot the sorted residuals: $\hat{\epsilon}_{[i]}$ against the theoretical normal quantiles: $u_i = \Phi^{-1}(\frac{i}{n+1})$ for $i = 1, \ldots, n=47$. There appears to be a small and random deviation between these quantities, as seen by the points following an approximately linear trend. 
+
+The Shapiro-Wilk test for normality assumes the following hypotheses: $H_o: \epsilon_i \text{ are normally distributed}$ versus $H_a: \epsilon_i \text{ are not normally distributed}$. Given the non-extreme test statistic ($w \approx 0.98$) and sufficiently large p-value ($p \approx 0.44$), there is not evidence to suggest a violation of the normality condition. Note that for the Shapiro-Wilk test, concerns about statistical power and its sensitivity to sample size motivate checking normality through additional methods, as done above with supporting evidence that draws the same conclusion.
+
+```{r}
+# normality assumption 
+
+#histogram of residuals 
+hist(fit2$residual, freq = F, main = "Histogram of Residuals", xlab = "Resdiuals")
+lines(density(fit2$residual))
+
+#qq-plot
+qqnorm(fit2$residual, ylab = "Residuals")
+qqline(fit2$residual)
+
+#shapiro-wilk test 
+shapiro.test(fit2$residual)
+
+```
+
+Next, I check for outliers. Outliers are unusual points that do not fit the model well. To distinguish between outliers and large residuals, we exclude point i, recompute $\hat{\beta}_{(i)}$ and hence $\hat{y}_{(i)}\hat{X_i^T\hat{\beta}}_{(i)}$. We conclude $i$ is an outlier if $|y_i = \hat{y}_{(i)}|$ is 'large.' To quantify 'large', we use the (externally) studentized residuals as shown below, with the derivations taken to be true: 
+
+$$\begin{align*} \text{ Externally Studentized Residuals: } t_i &:= \frac{y_i - \hat{y}_{(i)}}{\hat{\sigma}_{(i)}\sqrt{1 + X_i^T(X_{(i)}^TX_{(i)})^{-1}X_i}} \\ &= r_i (\frac{n - (p + 1) - 1}{n - (p + 1) - r_i^2})^{1/2} \\ &\text{ where } r_i = \frac{\hat{\epsilon_i}}{\hat{\sigma}\sqrt{1 - h_i}} \\ &\text{ Note that } t_i \sim t_{n - (p + 1) - 1} \text{ under } H_o: i_{th} \text{ observation not an outlier} \end{align*}$$
+
+First, I plot all $t_i, i \in {1, \ldots, 47}$ against the respective observations. I flag any values for which $|t_i| \ge 1.75$. The five observations which meet this threshold are highlighted in blue. They represent the most extreme $t_i$ values; in other words, these are the observations with the most extreme deviations between $y_i$ and $\hat{y}_{(i)}$. These are potential outliers to explore further. 
+
+```{r}
+ti <- rstudent(fit2)
+thr <- 1.75
+
+plot(
+  ti,
+  pch = 19, col = "gray30",
+  main = "Externally Studentized Residuals",
+  xlab = "Observation index",
+  ylab = "Externally studentized residual", 
+  ylim = c(-3,3)
+)
+abline(h = c(-thr, thr), col = "red", lty = 2, lwd = 1)
+
+idx <- which(abs(ti) >= thr)
+points(idx, ti[idx], pch = 19, col = "blue")
+pos <- ifelse(ti[idx] >= 0, 3, 1)  # label above if positive, below if negative
+text(idx, ti[idx], labels = idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+```
+
+
+Next, I assess whether any of the (above) candidate observations are formally outliers. For each observation $i$, I compare $|t_i|$ with $t^{\alpha/2}_{n - (p + 1) - 1}$. Following this test, observation 23 is the only point deemed an outlier at the $\alpha = 0.05$ significance level. This is shown in the below plot. 
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05 # default significance level 
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = "Externally Studentized Residual", 
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit - 1, crit + 1))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+While conducting the outlier detection test for all observations simultaneously, in practice, we will reject too many points. Furthermore: 
+
+$$\text{ Type I Error } = P_{H_o}(\text{reject at least one test)} \\ \le \sum_iP_{H_o}(\text{reject test i}) \\ = n\alpha$$
+Thus, the Bonferroni correction appropriately controls for the Type I Error by testing each hypothesis at the $\alpha/n$ significance level. In doing so, observation 23 is no longer deemed an outlier. In fact, the critical value threshold is too large for any point to be deemed an outlier under the fitted model. While this provides contradictory results, I have shown the implication of not properly controlling for the Type I Error Rate.  
+
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05
+alpha_bonf <- alpha / n
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha_bonf)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha_bonf/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = sprintf("Externally Studentized Residuals (Bonferroni α/n = %.4f)", alpha_bonf),
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit, crit))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+
+
+# HW 5
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+```
+
+# Problem 1
+For Question 2 in Homework 4, check for influential points. 
+
+Note: I include previous work from Question 2 in Homework 4 first:
+
+## Load the Data and Fit Models
+
+`teengamb` contains information about a study of teenage gambling in Britain. It contains 47 rows and 5 columns. To predict expenditures from all other available variables, we fit the following two linear regressions: 
+
+$$ \text{response } Y_{org}:= gamble \sim sex + status + income + verbal \\  \text{response } log(Y_{org}) := log(gamble + 1) \sim  sex + status + income + verbal$$
+
+```{r}
+# help(teengamb)
+data(teengamb)
+head(teengamb)
+```
+
+```{r}
+fit2 <- lm(log(gamble + 1) ~ sex + status + income + verbal, data = teengamb)
+summary(fit2)
+```
+Now focus on the regression model with the response $log(Y_{org}) = log(gamble + 1)$
+
+- check the normality assumption 
+- check for outliers 
+
+
+I first plotted a histogram of the residuals, overlaying a density curve. It is unimodal with a slight left-skew. Additional checking is required for a conclusive determination about normality of the errors. Next, I plot the sorted residuals: $\hat{\epsilon}_{[i]}$ against the theoretical normal quantiles: $u_i = \Phi^{-1}(\frac{i}{n+1})$ for $i = 1, \ldots, n=47$. There appears to be a small and random deviation between these quantities, as seen by the points following an approximately linear trend. 
+
+The Shapiro-Wilk test for normality assumes the following hypotheses: $H_o: \epsilon_i \text{ are normally distributed}$ versus $H_a: \epsilon_i \text{ are not normally distributed}$. Given the non-extreme test statistic ($w \approx 0.98$) and sufficiently large p-value ($p \approx 0.44$), there is not evidence to suggest a violation of the normality condition. Note that for the Shapiro-Wilk test, concerns about statistical power and its sensitivity to sample size motivate checking normality through additional methods, as done above with supporting evidence that draws the same conclusion.
+
+```{r}
+# normality assumption 
+
+#histogram of residuals 
+hist(fit2$residual, freq = F, main = "Histogram of Residuals", xlab = "Resdiuals")
+lines(density(fit2$residual))
+
+#qq-plot
+qqnorm(fit2$residual, ylab = "Residuals")
+qqline(fit2$residual)
+
+#shapiro-wilk test 
+shapiro.test(fit2$residual)
+
+```
+
+Next, I check for outliers. Outliers are unusual points that do not fit the model well. To distinguish between outliers and large residuals, we exclude point i, recompute $\hat{\beta}_{(i)}$ and hence $\hat{y}_{(i)}\hat{X_i^T\hat{\beta}}_{(i)}$. We conclude $i$ is an outlier if $|y_i = \hat{y}_{(i)}|$ is 'large.' To quantify 'large', we use the (externally) studentized residuals as shown below, with the derivations taken to be true: 
+
+$$\begin{align*} \text{ Externally Studentized Residuals: } t_i &:= \frac{y_i - \hat{y}_{(i)}}{\hat{\sigma}_{(i)}\sqrt{1 + X_i^T(X_{(i)}^TX_{(i)})^{-1}X_i}} \\ &= r_i (\frac{n - (p + 1) - 1}{n - (p + 1) - r_i^2})^{1/2} \\ &\text{ where } r_i = \frac{\hat{\epsilon_i}}{\hat{\sigma}\sqrt{1 - h_i}} \\ &\text{ Note that } t_i \sim t_{n - (p + 1) - 1} \text{ under } H_o: i_{th} \text{ observation not an outlier} \end{align*}$$
+
+First, I plot all $t_i, i \in {1, \ldots, 47}$ against the respective observations. I flag any values for which $|t_i| \ge 1.75$. The five observations which meet this threshold are highlighted in blue. They represent the most extreme $t_i$ values; in other words, these are the observations with the most extreme deviations between $y_i$ and $\hat{y}_{(i)}$. These are potential outliers to explore further. 
+
+```{r}
+ti <- rstudent(fit2)
+thr <- 1.75
+
+plot(
+  ti,
+  pch = 19, col = "gray30",
+  main = "Externally Studentized Residuals",
+  xlab = "Observation index",
+  ylab = "Externally studentized residual", 
+  ylim = c(-3,3)
+)
+abline(h = c(-thr, thr), col = "red", lty = 2, lwd = 1)
+
+idx <- which(abs(ti) >= thr)
+points(idx, ti[idx], pch = 19, col = "blue")
+pos <- ifelse(ti[idx] >= 0, 3, 1)  # label above if positive, below if negative
+text(idx, ti[idx], labels = idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+```
+
+Next, I assess whether any of the (above) candidate observations are formally outliers. For each observation $i$, I compare $|t_i|$ with $t^{\alpha/2}_{n - (p + 1) - 1}$. Following this test, observation 23 is the only point deemed an outlier at the $\alpha = 0.05$ significance level. This is shown in the below plot. 
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05 # default significance level 
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = "Externally Studentized Residual", 
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit - 1, crit + 1))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+While conducting the outlier detection test for all observations simultaneously, in practice, we will reject too many points. Furthermore: 
+
+$$\text{ Type I Error } = P_{H_o}(\text{reject at least one test)} \\ \le \sum_iP_{H_o}(\text{reject test i}) \\ = n\alpha$$
+Thus, the Bonferroni correction appropriately controls for the Type I Error by testing each hypothesis at the $\alpha/n$ significance level. In doing so, observation 23 is no longer deemed an outlier. In fact, the critical value threshold is too large for any point to be deemed an outlier under the fitted model. While this provides contradictory results, I have shown the implication of not properly controlling for the Type I Error Rate.  
+
+
+```{r}
+ti <- rstudent(fit2)
+n <- length(ti)
+df_t <- df.residual(fit2) - 1 # df for externally studentized residuals
+alpha <- 0.05
+alpha_bonf <- alpha / n
+
+# two-sided p-values and significant indices
+pval <- 2 * pt(-abs(ti), df = df_t)
+sig_idx <- which(pval < alpha_bonf)
+
+# critical value for plotting reference lines
+crit <- qt(1 - alpha_bonf/2, df = df_t)
+
+plot(
+  ti,
+  pch = 19,
+  col = ifelse(seq_along(ti) %in% sig_idx, "blue", "gray30"),
+  main = sprintf("Externally Studentized Residuals (Bonferroni α/n = %.4f)", alpha_bonf),
+  xlab = "Observation index",
+  ylab = "Externally studentized residual",
+  ylim = range(c(ti, -crit, crit))
+)
+abline(h = c(-crit, crit), col = "red", lty = 2, lwd = 1)
+
+# label only significant points
+if (length(sig_idx)) {
+  pos <- ifelse(ti[sig_idx] >= 0, 3, 1)
+  text(sig_idx, ti[sig_idx], labels = sig_idx, pos = pos, cex = 0.8, col = "blue", offset = 0.4)
+}
+```
+
+Note: This is the new part of the assignment where I check for influential points: 
+
+An influential point is one whose removal from the dataset would cause a large change in the fit. Cook's distance combines the residual and leverage effect in a single statistic: 
+
+$$
+\begin{align*}
+D_i &= \frac{(\hat{y} - \hat{y}_{(i)})^{T} (\hat{y} - \hat{y}_{(i)})}{(p + 1)\hat{\sigma}^2} \\
+&= \frac{(\hat{\beta} - \hat{\beta}_{(i)})^{T} X^{T} X (\hat{\beta} - \hat{\beta}_{(i)})}{(p + 1)\hat{\sigma}^2} \\
+&= \frac{1}{p + 1} r_i^2 \frac{h_i}{1 - h_i}
+\end{align*}
+$$
+
+Below is a plot of the half-normal quantiles versus the cook's distance for each point. There are two potential outliers, observations five and six, which fall beyond 2 half-normal quantiles from zero. 
+
+```{r}
+cook <- cooks.distance(fit2)
+halfnorm(cook, ylab = "Cook's distance")
+abline(v = 2, lty = 2, col = "red")
+```
+
+After fitting the new model without observations five and six, the residual standard error decreases (from 1.085 to 1.033). This new model also has an improved and higher multiple $R^2$ value (0.5206 to 0.5669). This shows that excluding these two observations changes, and from a preliminary check, in fact improves the model fit. The estimated coefficients across both fitted models have the same sign, and there are marginal differences as seen below. Since the model fit is changed by excluding observations five and six, these are potential influential points. It takes a domain expert to determine whether the observed change in model fit warrants removing these points for more appropriate inference and subsequent analysis. 
+
+```{r}
+fit2.b <- lm(log(gamble + 1) ~ sex + status + income + verbal, 
+             data = teengamb[-c(5,6),])
+summary(fit2.b)
+coef(fit2)
+coef(fit2.b)
+coef(fit2) - coef(fit2.b)
+```
+
+# Problem 2 
+Using the `divusa` data: 
+
+`divusa(faraway)`: Divorce rates in the USA from 1920-1996; a data frame with 77 observations and seven variables 
+
+```{r}
+# help(divusa)
+data(divusa)
+head(divusa)
+```
+
+- Fit a regression model with `divorce` as the response and `unemployed`, `femlab`, `marriage`, `birth`, and `military` as predictors. Compute the condition numbers and interpret their meanings. 
+
+```{r}
+result <- lm(divorce ~ unemployed + femlab + marriage + birth + military, data = divusa)
+summary(result)
+```
+The condition number helps to assess collinearity among the predictors in the fitted model. It is defined as follows: 
+
+$$\text{ Condition Number (of) } X^TX:= k = \sqrt{\frac{\lambda_1}{\lambda_{p+1}}} \\ \text{where } \lambda_1: \text{ largest eigenvalue and } \lambda_2: \text{ smallest eigenvalue}$$
+
+A large condition number indicates evidence of collinearity among predictors. A general rule of thumb says $k > 30$ indicates sufficiently large evidence for a strong presence of collinearity. Thus, here (k = 25), there is not strong evidence of multicollinearity among the predictors. 
+
+```{r}
+#condition number
+  #large k (> 30) --> presence of collinearity 
+X <- model.matrix(result)[,-1] #exclude intercept col 
+e <- eigen(t(X) %*% X)
+max(round(sqrt(e$val[1]/e$val), 3))
+```
+- For the same model, compute the VIFs. Is there evidence that collinearity causes some predictors not to be significant? Explain. 
+
+The variance inflation factor (VIF) is a metric used to assess collinearity among predictors in the fitted model. It comes from the following formulation: 
+
+$$\text{ Let } S_{xj} = \sum_{i}(x_{ij} - \bar{x}_j)^2. \text{ Then } \\ Var(\hat{\beta}) = \sigma^2 \frac{1}{1 - R^2_j}\frac{1}{S_{xj}} \\  \text{ where VIF} := \frac{1}{1 - R^2_j}$$
+
+A 'large' VIF indicates strong evidence of collinearity among the predictors. Here, the highest VIF value corresponds to `femlab`, but it is only 3.613, so there is not sufficient evidence to suggest strong collinearity among the predictors. 
+
+Under the fitted model, `unemployed` and `military` are the only insignificant predictors at the 0.05 significance level when testing for a nonzero effect. In fact, the magnitude of the p-values are related to the VIF values. That is, the larger VIF values correspond to smaller p-values, and hence more evidence to suggest a constituent nonzero effect. This suggests that more collinear predictors are more likely to have a significant (nonzero) effect, a property that should be examined further to assess the validity of these hypothesis tests.  
+
+```{r}
+#variance inflation factor (VIF)
+  #large VIF (>10) --> presence of collinearity 
+round(vif(X), 3)
+summary(result)$coefficients[,4]
+```
+
+- Does the removal of insignificant predictors from the model reduce the collinearity? Investigate. 
+
+After fitting the new model, removing the previously insignificant predictors, all of the remaining predictors still appear respectively significant. 
+
+```{r}
+result2 <- lm(divorce ~ femlab + marriage + birth, data = divusa)
+summary(result2)
+```
+
+Under this new fitted model, the condition number is still below 30 and the VIF values are all well below 10. Thus, there is still not any strong evidence to suggest collinearity among predictors under this new fitted model, as was seen even in the above model where there were insignificant predictors. 
+
+```{r}
+#condition number
+  #large k (> 30) --> presence of collinearity 
+X2 <- model.matrix(result2)[,-1] #exclude intercept col 
+e2 <- eigen(t(X2) %*% X2)
+round(sqrt(e2$val[1]/e2$val), 3)
+
+#variance inflation factor (VIF)
+  #large VIF (>10) --> presence of collinearity 
+round(vif(X2), 3)
+
+```
+
+# Problem 3
+For the `longley` data, fit a model with `Employed` as the response and the other variables as predictors. 
+
+`longley(datasets)`: A macroeconomic data set which provides a well-known example for a highly collinear regression; data frame contains 7 economical variables, observed yearly from 1947 to 1962 (n = 16). 
+
+```{r}
+help(longley)
+data(longley)
+head(longley)
+```
+
+```{r}
+result3 <- lm(Employed ~ ., data = longley)
+summary(result3)
+```
+- Compute and comment on the condition numbers 
+
+A large condition number indicates evidence of collinearity among predictors. A general rule of thumb says $k > 30$ indicates sufficiently large evidence for a strong presence of collinearity. Thus, here (k = 25), there is extremely strong evidence of multicollinearity among the predictors. 
+
+```{r}
+#condition number
+  #large k (> 30) --> presence of collinearity 
+X3 <- model.matrix(result3)[,-1] #exclude intercept col 
+e3 <- eigen(t(X3) %*% X3)
+max(round(sqrt(e3$val[1]/e3$val), 3))
+```
+- Compute and comment on the correlations between the predictors
+
+All predictors show near-perfect ($r \approx 1$) pairwise correlation, with the exception of `Armed.Forces` ($r \approx 0$) which does not show any pairwise correlation with the other predictors. 
+
+```{r}
+#correlation matrix
+round(cor(X3)[,-7])
+```
+
+
+- Compute the variance inflation factors
+
+Excluding `Armed.Forces`, all other variables have VIF values larager than 10, suggesting strong evidence of multicollinearity among these predictors. 
+
+```{r}
+#variance inflation factor (VIF)
+  #large VIF (>10) --> presence of collinearity 
+round(vif(X3 ), 3)
+```
+
+# HW 6
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(nlme)
+library(quantreg)
+library(MASS)
+```
+
+# Problem 1 
+
+Description: In a study of cheddar cheese, samples of cheese were analyzed for their chemical composition and were subjected to taste tests. Overall taste scores were obtained by combining the scores from several tasters. This is a data frame with 30 observations on four variables. 
+
+```{r}
+# help(cheddar)
+data(cheddar)
+head(cheddar)
+```
+
+Using the `cheddar` data, fit a linear model with `taste` as the response and the other three variables as predictors. 
+
+```{r}
+model.OLS <- lm(taste ~ ., data = cheddar)
+summary(model.OLS)
+```
+- Suppose that the observations were taken in time order. Create a time variable. Plot the residuals of the model against time and comment on what can be seen. 
+
+```{r}
+time.var <- 1:nrow(cheddar)
+cheddar <- cbind(cheddar, time.var)
+head(cheddar)
+```
+
+Notice how the residuals are decreasing linearly over time. This gives visual (informal) evidence to suggest that the errors (residuals) are correlated over time, violating one of the OLS assumptions. 
+
+```{r}
+plot(time.var, model.OLS$residuals,
+     main = "Cheddar: OLS Residuals vs Time",
+     xlab = "Time (index)",
+     ylab = "Residuals")
+abline(lm(resid(model.OLS) ~ time.var, data = cheddar), col = "red", lwd = 2)
+```
+
+- Fit a GLS model with same form as above but now allow for an AR(1) correlation among the errors. Is there evidence of such a correlation? 
+
+```{r}
+model.GLS <- gls(taste ~ Acetic + H2S + Lactic, 
+                 correlation = corAR1(form = ~ time.var),
+                 data = cheddar)
+summary(model.GLS)
+```
+
+Under the autoregressive model as seen above, $\rho$ is used to test correlated errors. Formally, we are testing $H_o: \rho = 0 \text{ vs } H_a: \rho \ne 0$. Assuming this test uses the $\alpha = 0.05$ significance level, we can use a $100(1 - (\alpha = 0.05)) = 95\%$ confidence level to address the same statistical question. That is, the below $95\%$ CI for $\rho$ contains zero. Thus, we fail to reject $H_o$ and there is not significant evidence to suggest the errors are correlated. 
+
+```{r}
+intervals(model.GLS)
+```
+
+- Fit a OLS model but now with time as an additional predictor. Investigate the significance of time in the model. 
+
+In the following OLS model, `H2S` and `Lactic` are significant predictors, as was seen in the original OLS model above. Now, the manually constructed `time.var` is also significant in this model. That suggests there is an additional time component that is missing in the original OLS model. 
+
+```{r}
+model.OLS.time <- lm(taste ~ ., data = cheddar)
+summary(model.OLS.time)
+```
+- The last two models have both allowed for an effect of time. Explain how they do this differently.
+
+The GLS model treats time as a source of autocorrelation in the residuals, whereas the OLS model treats time as an explicit predictor influencing the mean response. Since these reflect different mechanisms, it is possible to find a significant time trend in the mean (OLS + time) even when the estimated residual correlation parameter $\rho$ from the GLS model is not significant. This suggests that the apparent time pattern in the residual plot likely reflects a systematic trend in taste over time rather than serially correlated random fluctuations (errors depend on previous errors even after controlling for predictors).
+
+# Problem 2 
+
+Using the `sat` data, fit a model with `total` as the response and `takers`, `ratio`, `salary` and `expend` as predictors using the following methods: 
+
+Description: The `sat` data frame has 50 rows and 7 columns. Data were collected to study the relationship between expenditures on public education and test results. 
+
+```{r}
+# help(sat)
+data(sat)
+head(sat)
+```
+
+- Ordinary least squares 
+
+I consult the p-values here to assess significance of predictors in the model. 
+
+```{r}
+model.OLS <- lm(total ~ takers + ratio + salary + expend, data = sat)
+summary(model.OLS)
+```
+
+- Least absolute deviations 
+
+I consult the confidence intervals to assess significance in the predictors. Since the same significance level ($\alpha = 0.05$) is being used, a CI excluding zero provides evidence for a signifcant predictor. 
+
+```{r}
+model.LAD <- rq(total ~ takers + ratio + salary + expend, data = sat)
+summary(model.LAD)
+```
+
+- Huber's robust regression 
+
+
+```{r}
+round(qt(0.025, df = 45, lower.tail = F),3)
+```
+
+A predictor is significant if its respective t-test statistic has the following property: $|t| \gt 2.014$
+
+```{r}
+model.HM <- rlm(total ~ takers + ratio + salary + expend, data = sat)
+summary(model.HM)
+```
+
+Compare the results. In each case, comment on the significance of predictors. 
+
+Across all three regression methods: ordinary least squares (OLS), least absolute deviations (LAD), and Huber’s robust regression, `takers` emerges as a consistently significant predictor of total SAT score at the $\alpha=0.05$. None of the other predictors reach statistical significance across all models, suggesting that the proportion of test takers is the most stable and influential variable in explaining variation in SAT performance.
+
+The sign reversal of the `expend` coefficient in the LAD model may suggest that a few high-expenditure states exert substantial influence in the OLS and Huber fits, pulling their coefficients positive. Because LAD regression minimizes absolute rather than squared residuals, it is less sensitive to such extreme values, so its negative coefficient could reflect the trend among the majority of observations rather than the influence of outliers. However, this interpretation should be made cautiously; additional diagnostic plots (e.g., residual vs. leverage, influence measures) would be needed to confirm whether specific high-expenditure states are truly driving the difference.
+
+```{r}
+coef(model.OLS)
+coef(model.LAD)
+coef(model.HM)
+```
+
+# HW 7
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(nlme)
+library(splines)
+library(MASS)
+```
+
+# Problem 1 
+The `aatemp` data come from the U.S. Historical Climatology Network. They are the annual mean temperatures (degrees F) in Ann Arbor, Michigan going back about 150 years. 
+
+Data Description: The data contains annual mean temperatures in Ann Arbor, Michigan. The data comes from the U.S. Historical Climatology Network. It contains 115 observations on two variables (`year` and `temp`):
+
+```{r}
+# help(aatemp)
+data(aatemp)
+attach(aatemp)
+head(aatemp)
+```
+
+- Is there a linear trend?
+
+From the simple scatterlpot, there appears to be a linear trend between `temp` and `year`. 
+
+```{r}
+plot(aatemp$year, aatemp$temp, 
+     main = "Annual Mean Temperatures across Years", 
+     xlab = "Year", ylab = "Temperature")
+abline(lm(temp ~ year, data = aatemp), col = "blue")
+```
+
+More formally, the fitted SLR model shows a significant linear effect between `temp` and `year`.  
+
+```{r}
+model.SLR <- lm(temp ~ year, data = aatemp)
+summary(model.SLR)
+```
+
+- Observations in successive years may be correlated. Fit a model that estimates this correlation. Does this change your opinion about the trend?
+
+```{r}
+model.GLS <- gls(temp ~ year, 
+                 correlation = corAR1(form = ~ year), 
+                 data = aatemp)
+summary(model.GLS)
+```
+
+Under the autoregressive model as seen above, $\rho$ is used to test correlated errors. Formally, we are testing $H_o: \rho = 0 \text{ vs } H_a: \rho \ne 0$. Assuming this test uses the $\alpha = 0.05$ significance level, we can use a $100(1 - (\alpha = 0.05)) = 95\%$ confidence level to address the same statistical question. That is, the below $95\%$ CI for $\rho$ is strictly positive (and does not contain zero). Thus, we reject $H_o$ and there is significant evidence to suggest the errors are correlated. In particular, the AR1 model structure suggests that observations in successive years are correlated. 
+
+```{r}
+intervals(model.GLS)
+```
+
+- Fit a polynomial model with degree 10 and use backward elimination to reduce the degree of the model. Plot your fitted model on top of the data. Use this model to predict the temperature in 2020. 
+
+Starting with degree 10, I use backward elimination, simplifying polynomial models with non-significant highest-order terms. The polynomial regression model with degree = 5 is the first instance where the highest-order term is significant. While the second-order term under this fitted model is not significant, and the fourth-order term is only significant at the 0.1 significance level, we follow a hierarchical pattern. That is, it's best practice to retain lower-order terms, even if not (or less) significant, when a higher order term is significant. 
+
+
+```{r}
+# summary(lm(temp ~ poly(year, 10)))
+# summary(lm(temp ~ poly(year, 9)))
+# summary(lm(temp ~ poly(year, 8)))
+# summary(lm(temp ~ poly(year, 7)))
+# summary(lm(temp ~ poly(year, 6)))
+# summary(lm(temp ~ poly(year, 5)))
+# summary(lm(temp ~ poly(year, 4)))
+
+deg <- 10:5
+pval <- sapply(deg, function(i) {
+  fit <- lm(temp ~ poly(year, i), data = aatemp)
+  coef(summary(fit))[i + 1, 4] #implicit p-value return
+})
+
+data.frame(degree = deg, p.value = as.numeric(pval), 
+           significant = ifelse(as.numeric(pval) < 0.05, T, F))
+
+model.poly <- lm(temp ~ poly(year, 5))
+summary(model.poly)
+
+```
+Under the fitted polynomial regression model (with degree = 5), the predicted temperature in 2020 is approximately 60 degrees in F. 
+
+```{r}
+predict(model.poly, newdata = data.frame(year = 2020))
+```
+
+- Suppose someone claims that the temperature was constant until 1930 and then began a linear trend. Fit a model corresponding to this claim. What does the fitted model say about this claim? 
+
+To evaluate the claim that temperature was constant until 1930 and then began a linear trend, we fit a piecewise (segmented) regression model. The model assumes a flat mean level before 1930 and a linear increase (or decrease) in temperature after 1930. In this specification, the slope parameter after 1930 measures the rate of temperature change per year once the trend begins.
+
+The fitted model can be written in closed form as:
+
+$$
+\text{temp}_t =
+\begin{cases}
+\beta_0, & \text{if } \text{year} < 1930, \\
+\beta_0 + \beta_1(\text{year} - 1930), & \text{if } \text{year} \ge 1930.
+\end{cases}
+$$
+
+Equivalently, using the positive-part operator $(x)_+ = \max(0, x)$, this can be expressed as:
+
+$$
+\text{temp}_t = \beta_0 + \beta_1(\text{year} - 1930)_+ + \varepsilon_t, \\ 
+\text{where } \beta_0 \text{ represents the mean temperature before 1930, } \\ 
+\beta_1 \text{ represents the annual rate of change in temperature after 1930} \\ \text{ and } 
+\varepsilon_t \text{ denotes random error.}
+$$
+
+
+The fitted piecewise model is:
+
+$$
+\widehat{\text{temp}}_t = 47.43 + 0.01497(\text{year} - 1930)_+.
+$$
+
+Before 1930, temperature is constant at $\text{temp}_t = 47.43$. After 1930, temperature increases by about $0.015$ units per year.
+
+The slope term ($ \approx 0.015$) is positive and significant, supporting a linear upward trend after 1930. The intercept reflects the baseline mean before 1930 and does not indicate a trend.
+
+```{r}
+# construct piecewise variable 
+aatemp$after1930 <- pmax(0, aatemp$year - 1930)
+
+# fit piecewise linear model 
+model.piecewise <- lm(temp ~ after1930, data = aatemp)
+summary(model.piecewise)
+
+```
+
+- Make a cubic spline fit with six basis functions evenly spaced on the range. Plot the fit in comparison to the previous fits. Does this model fit better than the straight-line model? 
+
+We fit a cubic regression spline on the year scale without rescaling.  
+A cubic spline (degree = 3, order = 4) produces six basis functions when two evenly spaced interior knots are placed within the observed year range.  
+These interior knots, $k_1$ and $k_2$, divide the interval $[y_{\min}, y_{\max}]$ into three equal segments, giving the spline evenly distributed flexibility across time.  
+The open uniform knot vector is
+
+$$
+\text{knots} = \{y_{\min}, y_{\min}, y_{\min}, y_{\min},
+k_1, k_2,
+y_{\max}, y_{\max}, y_{\max}, y_{\max}\}.
+$$
+
+The fitted model is
+
+$$
+\text{temp}_t = \beta_0 + \sum_{j=1}^{6} \beta_j B_j(\text{year}_t) + \varepsilon_t.
+$$
+where  
+- $\text{temp}_t$ is the observed temperature at time $t$,  
+- $\beta_0$ is the intercept term,  
+- $B_j(\text{year}_t)$ are the six cubic spline basis functions evaluated at year $t$,  
+- $\beta_j$ are the coefficients corresponding to each basis function, and  
+- $\varepsilon_t$ is the random error term, assumed to have mean zero and constant variance.  
+
+
+One of the spline basis coefficients is reported as `NA` because the spline basis functions sum to one, making the intercept a linear combination of them.  
+This perfect multicollinearity causes `lm()` to drop one redundant column automatically.  
+The model fit remains valid, as the effect of the omitted basis function is absorbed into the intercept term.
+
+
+```{r}
+# Compute boundary and interior knots directly on year scale
+yr_min <- min(aatemp$year)
+yr_max <- max(aatemp$year)
+int_knots <- seq(yr_min, yr_max, length.out = 4)[2:3]  # two interior knots
+
+# cubic spline: degree = 3 --> order = 4
+ord <- 4
+knots <- c(rep(yr_min, ord), int_knots, rep(yr_max, ord))
+
+# design matrix (6 basis functions)
+bx <- splineDesign(knots = knots, x = aatemp$year, ord = ord)
+
+# fit model
+m_spline6 <- lm(temp ~ bx, aatemp) 
+summary(m_spline6)
+
+```
+
+While there is a general linear increase in temperature over time, the cubic spline model more accurately reflects the gradual, nonlinear variation present in the data.
+
+```{r}
+# basis functions visual
+matplot(aatemp$year, bx, type = "l",
+        main = "Cubic Spline Basis Functions",
+        xlab = "Year", ylab = "Basis value")
+
+# compare cubic spline fit versus straight-line model 
+matplot(aatemp$year, cbind(aatemp$temp, 
+                           m_spline6$fitted.values, 
+                           model.SLR$fitted.values), 
+        
+        type = "ll", 
+        lwd = c(1,2,2),
+        col = c("black", "purple", "steelblue"), 
+        lty = c(1, 1, 1), 
+        main = "Observed vs Fitted: Spline and SLR",
+        xlab = "Year", ylab = "Temperature")
+
+legend("topleft", 
+       legend = c("Observed", "Spline", "SLR"), 
+       col = c("black", "purple", "steelblue"), 
+       lwd = c(1, 2, 2), 
+       lty = c(1, 1, 1), 
+       bty = "n",
+       cex = 0.85)
+```
+
+Overall, the SLR and polynomial models capture the broad upward trend, but the GLS, piecewise, and spline models better represent the intermediate fluctuations in temperature across years.
+
+
+```{r}
+# Collect fitted values for all models (order matches legend/colors below)
+fits_all <- cbind(
+  model.SLR$fitted.values,      # SLR
+  model.GLS$fitted.values,      # GLS
+  model.poly$fitted.values,     # Polynomial
+  model.piecewise$fitted.values,# Piecewise
+  m_spline6$fitted.values       # Spline
+)
+
+# Observed + all fitted lines
+matplot(aatemp$year, cbind(aatemp$temp, fits_all),
+        type = "ll",
+        lwd  = c(1, 2, 2, 2, 2, 2),
+        col  = c("black", "steelblue", "blue", "forestgreen", "orange", "purple"),
+        lty  = c(1, 1, 1, 1, 1, 1),
+        xlab = "Year", ylab = "Temperature",
+        main = "Observed vs Fitted: SLR, GLS, Polynomial, Piecewise, Spline")
+
+legend("topleft",
+       legend = c("Observed", "SLR", "GLS", "Polynomial", "Piecewise", "Spline"),
+       col    = c("black", "steelblue", "blue", "forestgreen", "orange", "purple"),
+       lwd    = c(1, 2, 2, 2, 2, 2),
+       lty    = c(1, 1, 1, 1, 1, 1),
+       bty    = "n",
+       cex    = 0.8)
+
+```
+
+
+# Problem 2 
+
+Using the `ozone` data, fit a model with `O3` as the response and `temp`, `humidity`, and `ibh` as predictors. Use the Box-Cox method to determine the best transformation on the response. 
+
+Ozone (Description): A study into the relationship between atmospheric ozone concentration and meteorology in the Los Angeles Basin in 1976. This is a dataframe with 330 observations on ten variables.
+
+```{r}
+# help(ozone)
+data(ozone)
+head(ozone)
+```
+
+```{r}
+model <- lm(O3 ~ temp + humidity + ibh, data = ozone)
+summary(model)
+```
+
+The Box-Cox method is a transformation of the response, i.e. $y \rightarrow g_{\lambda}(y)$ such that 
+$$g_{\lambda}(y) =
+\begin{cases}
+\dfrac{y^{\lambda - 1}}{\lambda}, & \lambda \ne 0, \\
+\ln(y), & \lambda = 0.
+\end{cases}$$
+
+Ultimately, the goal is to find $\lambda$ such that $g_{\lambda}(y) \sim X$ follows a linear model, with the proper (regression) assumptions holding. One approach is to minimize the $\text{RSS}_\lambda$ from the fitted model $g_{\lambda}(y) \sim X$. Equivalently, we can instead compute the likelihood of the data using the normal assumption for any given $\lambda$. Then, we choose $\lambda$ to maximize $L(\lambda) = \frac{-n}{2}ln(\frac{RSS_\lambda}{n})$. 
+
+By default, the below plots show the 95% confidence interval for $\lambda$ using the asymptotic distribution of the likelihood. Note that $\lambda = 1$ represents no transformation. Thus, since one is not contained in the below confidence interval, there is evidence to suggest we should transform the response `O3`. For easier interpretation, we can approximate from the below plot and choose $\lambda = 1/3$. 
+
+```{r}
+boxcox(model, plotit = T)
+boxcox(model, plotit = T, lambda = seq(0, 1, 0.05))
+```
+
+Here is the output from the new fitted model with $\lambda = 1/3$ as discussed above. Additional assumption checking should be carried out to ensure this transformation is appropriate and necessary.
+
+```{r}
+transform.model <- lm(O3^(1/3) ~ temp + humidity + ibh, data = ozone)
+summary(transform.model)
+```
+
+# HW 8
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+```
+
+# Problem 1
+
+![Problem 1](Problem1.png)
+
+Data (Description): This data set provides measurements of the diameter, height, and volume of timber in 31 felled black cherry trees. Note that the diameter (inches) is erroneously labelled `Girth` in the data. It is measured at 4 ft 6 in above the ground.  
+
+```{r}
+# help(trees)
+data(trees)
+attach(trees)
+head(trees)
+```
+
+After fitting the full second-order model, only the linear term for `Girth` was significant, so the model was simplified by removing the non-significant quadratic terms. The resulting model, containing the first-order terms and their interaction, is more parsimonious. In this model, both `Girth` and `Height` are significant. The significant interaction term suggests that the effect of `Girth` on `log(Volume)` depends on the level of `Height`, and vice versa.
+
+```{r}
+# second-order polynomial with interaction terms
+model <- lm(log(Volume) ~ (Girth + Height)^2 + I(Girth^2) + I(Height^2),
+                  data = trees)
+# model <- lm(log(Volume) ~ poly(Girth, Height, degree = 2, raw = TRUE),
+#                   data = trees)
+summary(model)
+
+```
+
+```{r}
+model2 <- lm(log(Volume) ~ Girth * Height, data = trees)
+summary(model2)
+```
+
+# Problem 2
+
+![Problem 2](Problem2.png)
+
+## Question 2 — Comparing Mean Functions
+
+Suppose $X_1$ is continuous and $F$ is a factor with three levels represented by dummy variables $X_2$ and $X_3$.The response is $Y$. The following three mean functions are given:
+
+$$
+\begin{aligned}
+E(Y|X) &= \beta_0 + \beta_1 X_1 + \beta_2 X_2 + \beta_3 X_3 \quad (5.19) \\
+E(Y|X) &= \beta_0 + \beta_1 X_1 + \beta_{12} X_1 X_2 + \beta_{13} X_1 X_3 \quad (5.20) \\
+E(Y|X) &= \beta_0 + \beta_1 (X_1 - \delta) + \beta_{12}(X_1 - \delta)X_2 + \beta_{13}(X_1 - \delta)X_3 \quad (5.21)
+\end{aligned}
+$$
+
+Each model specifies a straight-line relationship between $E(Y|X_1, F)$ and $X_1$ for each level of $F$, but with different assumptions about how the slopes and intercepts vary across levels of $F$.
+
+For each level of $F$:
+
+**Model (5.19):**
+
+$$
+E(Y|X_1, F) =
+\begin{cases}
+\beta_0 + \beta_1 X_1, & F = 1 \\
+(\beta_0 + \beta_2) + \beta_1 X_1, & F = 2 \\
+(\beta_0 + \beta_3) + \beta_1 X_1, & F = 3
+\end{cases}
+$$
+Intercepts differ; slopes are equal.
+
+**Model (5.20):**
+
+$$
+E(Y|X_1, F) =
+\begin{cases}
+\beta_0 + \beta_1 X_1, & F = 1 \\
+\beta_0 + (\beta_1 + \beta_{12})X_1, & F = 2 \\
+\beta_0 + (\beta_1 + \beta_{13})X_1, & F = 3
+\end{cases}
+$$
+Intercepts are equal; slopes differ.
+
+**Model (5.21):**
+
+$$
+E(Y|X_1, F) =
+\begin{cases}
+\beta_0 + \beta_1(X_1 - \delta), & F = 1 \\
+\beta_0 + \beta_{12}(X_1 - \delta), & F = 2 \\
+\beta_0 + \beta_{13}(X_1 - \delta), & F = 3
+\end{cases}
+$$
+Both slope and intercept depend on $\delta$; this is nonlinear in the parameters.
+
+The parameter $\delta$ in Model (5.21) shifts each fitted line horizontally, so all levels of $F$ tend to intersect near $X_1 = \delta$. This shift allows the model to represent different slope and intercept combinations using a single common pivot point. Because $\delta$ multiplies several $\beta$ terms, the model becomes nonlinear in its parameters and more flexible than Models (5.19) and (5.20).
+
+
+In summary, 
+
+- Model (5.19): Parallel lines — equal slopes, different intercepts by level of $F$.  
+- Model (5.20): Common intercept, differing slopes by level of $F$.  
+- Model (5.21): Both slope and intercept change as a function of the nonlinear shift parameter $\delta$, generalizing the first two models.
+
+```{r}
+# Example coefficient values for illustration
+
+b0 <- 5; b1 <- 2; b2 <- 3; b3 <- 6
+b12 <- 1.5; b13 <- 3; delta <- 2
+
+x1 <- seq(0, 10, length.out = 100)
+
+# Model 5.19: same slope, different intercepts
+
+y_519 <- data.frame(
+F1 = b0 + b1 * x1,
+F2 = (b0 + b2) + b1 * x1,
+F3 = (b0 + b3) + b1 * x1
+)
+
+# Model 5.20: same intercept, different slopes
+
+y_520 <- data.frame(
+F1 = b0 + b1 * x1,
+F2 = b0 + (b1 + b12) * x1,
+F3 = b0 + (b1 + b13) * x1
+)
+
+# Model 5.21: nonlinear parameter \delta; ffects both intercepts/slopes
+
+y_521 <- data.frame(
+F1 = b0 + b1 * (x1 - delta),
+F2 = b0 + b12 * (x1 - delta),
+F3 = b0 + b13 * (x1 - delta)
+)
+
+```
+
+
+
+```{r}
+# Plot each model
+par(mfrow = c(1,3))
+matplot(x1, y_519, type = "l", lty = 1, lwd = 2,
+col = c("black","blue","red"), main = "Model (5.19)",
+xlab = "X1", ylab = "E(Y|X1,F)")
+legend("topleft", legend = c("F1","F2","F3"),
+col = c("black","blue","red"), lty = 1, bty = "n")
+
+matplot(x1, y_520, type = "l", lty = 1, lwd = 2,
+col = c("black","blue","red"), main = "Model (5.20)",
+xlab = "X1", ylab = "E(Y|X1,F)")
+legend("topleft", legend = c("F1","F2","F3"),
+col = c("black","blue","red"), lty = 1, bty = "n")
+
+matplot(x1, y_521, type = "l", lty = 1, lwd = 2,
+col = c("black","blue","red"), main = "Model (5.21)",
+xlab = "X1", ylab = "E(Y|X1,F)")
+legend("topleft", legend = c("F1","F2","F3"),
+col = c("black","blue","red"), lty = 1, bty = "n")
+
+par(mfrow = c(1,1))
+```
+
+# Problem 3
+
+![Problem 3](Problem3.png)
+
+Data Link: http://users.stat.umn.edu/~sandy/alr4ed/data/ 
+
+Data (Description): The data file concerns salary and other characteristics of all faculty in a small Midwestern college collected in the early 1980s for presentation in legal proceedings for which discrimination against women in salary was at issue. The variables include `degree`, a factor level with PhD and MS; `rank`, a factor with levels Asst, Assoc, and Prof; `sex`, a factor with levels Male and Female; `Year`, years in current rank; `ysdeg`, years since highest degree, and `salary`, academic year salary in dollars. 
+
+```{r}
+data <- read.csv("salary.csv")
+head(data)
+# str(data)
+```
+
+```{r}
+# Convert to factors
+
+# unique(data$degree)
+# unique(data$rank)
+# unique(data$sex)
+
+data$degree <- factor(data$degree, levels = c("Masters", "PhD"))
+data$rank   <- factor(data$rank, levels = c("Asst", "Assoc", "Prof"))
+data$sex    <- factor(data$sex, levels = c("Male", "Female"))
+```
+
+
+```{r}
+data <- data[, -1] #remove (row) index var 
+str(data)
+```
+
+- Get appropriate graphical summaries of the data and discuss the graphs 
+
+While there is a discrepancy in the salary distribution according to sex, there is significant overlap in their IQR's. Thus, there is not sufficient (visual) evidence to suggest a significant difference in salary by sex. 
+
+However, rank appears to be (visually) associated with salary, with distinct distributions for each of its three levels (Asst, Assoc, and Prof). 
+
+While the variability in salary for those with Master's degrees is much higher than those with a PhD, there is not enough visual information to make a conclusion about association between degree and salary. 
+
+```{r}
+# Boxplots by key factors
+par(mfrow = c(1,3))
+boxplot(salary ~ sex,   data = data, main = "Salary by Sex",    ylab = "Salary")
+boxplot(salary ~ rank,  data = data, main = "Salary by Rank",   ylab = "Salary")
+boxplot(salary ~ degree,data = data, main = "Salary by Degree", ylab = "Salary")
+par(mfrow = c(1,1))
+```
+
+There are 38 males and 14 females in this study. Given the small overall and relative sample sizes, it is hard to discern any notable visual evidence of blatant sex discrimination according to years in the current rank and years since degree variable. Notice, however, that there are more males with higher years in current rank compared to females. We cannot extrapolate this pattern to suggest any discrimination, but it is worth exploring further. Additional formal testing and consideration is required. 
+
+```{r}
+table(data$sex)
+
+# Scatterplots vs experience variables, colored by sex
+cols <- c("Male" = "steelblue", "Female" = "tomato")
+plot(salary ~ year, data = data, col = cols[data$sex], pch = 16,
+     main = "Salary vs Years in Current Rank", xlab = "Years in Rank", ylab = "Salary")
+legend("topleft", legend = names(cols), col = cols, pch = 16, bty = "n")
+
+plot(salary ~ ysdeg, data = data, col = cols[data$sex], pch = 16,
+     main = "Salary vs Years Since Degree", xlab = "Years Since Degree", ylab = "Salary")
+legend("topleft", legend = names(cols), col = cols, pch = 16, bty = "n")
+
+```
+
+- Test the hypothesis that the mean salary for men and women is the same. What alternative hypothesis do you think is appropriate 
+
+We test  
+$H_0: \mu_{\text{Male}} = \mu_{\text{Female}}$ versus $H_a: \mu_{\text{Male}} \neq \mu_{\text{Female}}$ to assess possible discrimination in salary according to sex. 
+
+Since `sex` is a factor variable, the coefficient `sexFemale` in the fitted linear model represents the estimated difference in mean salary between females and males (after accounting for other predictors in fitted model).  
+
+The regression output shows that `sexFemale` is not statistically significant ($p = 0.214$), suggesting insufficient evidence to conclude a salary difference between men and women once all other predictors are considered. 
+
+```{r}
+# full model controlling for other variables 
+model = lm(salary ~ ., data)
+summary(model)
+```
+- Assuming no interaction between `sex` and the other predictors, obtain a 95% confidence interval for the difference in salary between males and females
+
+Assuming no interaction between `sex` and other predictors, we can use the additive model fitted (from above) to estimate the adjusted mean difference in salary between males and females.  
+The `confint()` function provides a confidence interval for the `sexFemale` coefficient, which represents the difference (Female − Male) in mean salary after adjusting for the other predictors.
+
+The resulting 95% confidence interval corresponds to the adjusted difference in mean salary between females and males. Since this interval contains zero, there is not statistically significant evidence to suggest a salary difference between males and females (after adjusting for other predictors). 
+
+```{r}
+confint(model, "sexFemale")
+```
+
+- Finkelstein (1980), in a discussion of the use of regression in discrimination cases wrote, "(a) variable may reflect a position or status bestowed by the employer, in which case if there is discrimination in the award of the position or status, the variable may be 'tainted.'" Thus, for example, if discrimination is at work in promotion of faculty to higher ranks, using rank to adjust salaries before comparing the sexes may not be acceptable to the courts. Exclude the variable `rank`, refit and summarize. 
+
+To explore the above assertion, we refit the model excluding `rank` and compare the results.
+
+After removing `rank`, the explanatory power of the model decreases (Adjusted $R^2 = 0.60$ vs. 0.84 previously), and the variability in salary explained by other factors increases.  
+All remaining predictors become significant except `sexFemale`, which remains nonsignificant ($p = 0.33$). This suggests that even without controlling for rank, there is still no statistically significant evidence of a sex-based salary difference. However, the decrease in overall fit indicates that rank explains a large portion of salary variation—consistent with its role as a position-level variable that strongly influences pay.
+
+
+```{r}
+# Exclude 'rank' and refit
+data.subset <- data[, c("degree", "sex", "year", "ysdeg", "salary")]
+model2 <- lm(salary ~ ., data = data.subset)
+summary(model2)
+```
+
+
+# HW 9
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(leaps)
+```
+
+
+# Problem 1
+
+Use the `prostate` data with `lpsa` as the response and the other variables as predictors. Implement the following variable selection methods to determine the "best" model 
+
+Data (Description): A study on 97 men with prostate cancer who were due to receive a radical prostatectomy. 
+
+```{r}
+# help(prostate)
+data(prostate)
+attach(prostate)
+head(prostate)
+```
+
+- Backward elimination 
+
+Best Model: `lpsa` ~ `lcavol` + `lweight` + `svi`  
+
+```{r}
+g = lm(lpsa ~ ., data = prostate) #summary(g)
+g = update(g, . ~ . - gleason); #summary(g)
+g = update(g, . ~ . - lcp); #summary(g)
+g = update(g, . ~ . - pgg45); #summary(g)
+g = update(g, . ~ . - age); #summary(g)
+g = update(g, . ~ . - lbph); summary(g)
+```
+- AIC
+
+Best model: `lpsa` ~ `lcavol` + `lweight` + `age` + `lbph` + `svi`
+
+```{r}
+g = lm(lpsa ~ ., data = prostate)
+step(g)
+```
+- Adjusted $R^2$
+
+Best model: `lpsa` ~ `lcavol` + `lweight` + `age` + `lbph` + `svi` + `lcp` + `pgg45`
+
+```{r}
+b = regsubsets(lpsa ~ ., data = prostate)
+summary(b)
+```
+
+```{r}
+# plot adj R^2 against p + 1 
+rs = summary(b)
+plot(2:9, rs$adjr2, xlab = "No. of Parameters", 
+     ylab = "Adjusted Rsq")
+
+# select model with largest adjusted R^2
+which.max(rs$adjr2)
+```
+- Mallows Cp 
+
+Best model: `lpsa` ~ `lcavol` + `lweight` + `lbph` + `svi`
+
+```{r}
+plot(2:9, rs$cp, xlab = "No. of Parameters", 
+     ylab = "Cp")
+abline(0, 1)
+which.min(rs$cp)
+```
+
+# Problem 2 
+Using the `divusa` dataset with `divorce` as the response and the other variables as predictors, repeat the work of the first question.  
+
+Data (Description): Divorce rates in the USA from 1920-1996. 
+
+```{r}
+# help(divusa)
+data(divusa)
+attach(divusa)
+head(divusa)
+```
+
+- Backward elimination 
+
+Best model: divorce ~ year + femlab + marriage + birth + military
+
+```{r}
+g = lm(divorce ~ ., data = divusa); #summary(g)
+g = update(g, . ~ . - unemployed); summary(g)
+```
+- AIC 
+
+Best model: divorce ~ year + femlab + marriage + birth + military
+
+```{r}
+g = lm(divorce ~ ., data = divusa)
+step(g)
+```
+
+- Adjusted $R^2$
+
+Best model: divorce ~ year + femlab + marriage + birth + military 
+
+```{r}
+b = regsubsets(divorce ~ ., data = divusa)
+summary(b)
+```
+
+```{r}
+# plot adj R^2 against p + 1 
+rs = summary(b)
+plot(2:7, rs$adjr2, xlab = "No. of Parameters", 
+     ylab = "Adjusted Rsq")
+
+# select model with largest adjusted R^2
+which.max(rs$adjr2)
+```
+
+- Mallows Cp 
+
+Best model: divorce ~ year + femlab + marriage + birth + military 
+
+```{r}
+plot(2:7, rs$cp, xlab = "No. of Parameters", 
+     ylab = "Cp")
+abline(0, 1)
+which.min(rs$cp)
+```
+
+
+
+# HW 10 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(tidyverse)
+library(MASS)
+library(lars)
+library(Metrics)
+```
+
+
+# Problem 1
+
+- Fit a ridge regression model to the `seatpos` data with `hipcenter` as the response and all other variables as predictors. Take care to select an appropriate amount of shrinkage. Use the model to predict the response at the values of the predictors specified in the first question: 
+
+Age: 64.8, Weight: 263.7, HtShoes: 181.080, Ht: 178.560, Seated: 91.440, Arm: 35.640, Thigh: 40.950, Leg: 38.790
+
+- Give a discussion on the comparison of the ridge estimates with standard least squares estimates with all predictors 
+
+Data (Description): Car drivers like to adjust the seat position for their own comfort. Car designers would find it helpful to know where different drivers will position the seat depending on their size and age. Researchers collected data on 38 drivers. 
+
+```{r}
+data(seatpos)
+attach(seatpos)
+head(seatpos)
+```
+
+
+```{r}
+# Ridge regression: choose a reasonable labmda grid 
+lambda_grid <- seq(0, 50, length.out = 100)
+ridge_mod <- lm.ridge(hipcenter ~ ., data = seatpos, lambda = lambda_grid)
+
+# select lambda with GCV method 
+idx <- which.min(ridge_mod$GCV)
+lambda_hat <- ridge_mod$lambda[idx]
+plot(ridge_mod$GCV)
+abline(v=idx)
+
+# Plot coefficient paths 
+matplot(ridge_mod$lambda, t(ridge_mod$coef), type="l", lty=1,
+        xlab = expression(lambda), ylab = expression(hat(beta)))
+abline(v=lambda_hat)
+paste("Lambda", round(lambda_hat,3))
+```
+
+```{r}
+# OLS coefficients
+OLS_model <- lm(hipcenter ~ ., data = seatpos)
+ols_coef <- coef(OLS_model)
+
+# Extract standardized ridge coefficients
+b_std <- ridge_mod$coef[, idx]      # standardized slopes
+s_x   <- ridge_mod$scales           # predictor SDs
+x_m   <- ridge_mod$xm               # predictor means
+y_m   <- ridge_mod$ym               # response mean
+
+# Convert ridge coefficients to original scale 
+
+# unscale slopes:
+b_orig <- b_std / s_x
+
+# unscale intercept:
+b0_orig <- y_m - sum(b_orig * x_m)
+
+# combine intercept and slopes:
+ridge_coef_orig <- c(b0_orig, b_orig)
+names(ridge_coef_orig) <- names(ols_coef)
+
+# Comparison table
+
+coef_compare <- data.frame(
+Predictor = names(ols_coef),
+OLS = round(ols_coef, 3),
+Ridge = round(ridge_coef_orig, 3)
+)
+
+coef_compare
+```
+
+```{r}
+# OLS RMSE
+rmse_ols <- rmse(seatpos$hipcenter, OLS_model$fitted.values)
+
+# Ridge RMSE (predictions on original scale)
+ridge_fitted <- ridge_mod$ym +
+  scale(seatpos[ , -which(names(seatpos) == "hipcenter")],
+  center = ridge_mod$xm,
+  scale  = ridge_mod$scales) %*%
+  ridge_mod$coef[, idx]
+
+rmse_ridge <- rmse(seatpos$hipcenter, ridge_fitted)
+
+# RMSE comparison table
+
+rmse_compare <- data.frame(
+Model = c("OLS", "Ridge"),
+RMSE  = c(rmse_ols, rmse_ridge)
+)
+
+rmse_compare
+```
+
+
+```{r}
+# Predict hipcenter for new driver
+newdriver <- data.frame(
+  Age = 64.8,
+  Weight = 263.7,
+  HtShoes = 181.080,
+  Ht = 178.560,
+  Seated = 91.440,
+  Arm = 35.640,
+  Thigh = 40.950,
+  Leg = 38.790
+  )
+
+ridge_pred <- ridge_mod$ym +
+  scale(newdriver,
+  center = ridge_mod$xm,
+  scale  = ridge_mod$scales) %*%
+  ridge_mod$coef[, idx]
+
+ridge_pred
+
+```
+
+Ridge regression introduces shrinkage to stabilize coefficient estimates in the presence of collinear predictors. The ridge trace plot indicates the coefficients gradually shrink toward zero as $\lambda$ increases, and the selected tuning parameter ($\lambda \approx$ `r round(lambda_hat,3)`) reflects a moderate amount of regularization.
+
+Ridge regression attempts to shrink all of the slope coefficients toward zero, but the amount of shrinkage differs across predictors. The `Leg` and `HtShoes` variables show the largest change in magnitude, indicating that their OLS estimates were heavily influenced by collinearity. 
+
+In contrast, predictors like `Weight`, `Ht`, and `Seated` change less in magnitude, while their signs differ, suggesting that their underlying effects were relatively weak and unstable.
+
+The direction of the strong predictors like `Arm` and `Thigh` remain consistent, though slightly dampened. Overall, ridge stabilizes the coefficient profile, but in fact, the predictive performance (according to RMSE) is slightly worse when compared to OLS. 
+
+Finally, using the ridge model with the selected $\lambda$, the predicted hipcenter for the given driver profile is approximately **`r round(ridge_pred,2)`**, reflecting the regularized contribution of all predictors.
+
+
+# Problem 2
+Take the `fat` data and use the percentage of body fat, `siri`, as the response and the other variables, except `brozek` and `density` as potential predictors. Remove every tenth observation from the data for use as a test sample. Use the remaining data to build the following models: 
+
+- Linear regression with all predictors 
+- Ridge regression 
+- Lasso 
+
+Use the models you find to predict the response in the test sample. Make a report on the performances of the models. 
+
+Data (Description): Age, weight, height, and 10 body circumference measurements are recorded for 252 men. Each man's percentage of body fat was accurately estimated by an underwater weighing technique. 
+
+```{r}
+data(fat)
+attach(fat)
+head(fat)
+```
+
+
+```{r}
+# Remove columns brozek and density using base R
+fat <- fat[, !(names(fat) %in% c("brozek", "density"))]
+
+# Train/test split: every 10th observation
+test_idx <- seq(10, nrow(fat), by = 10)
+fat_test  <- fat[test_idx, ]
+fat_train <- fat[-test_idx, ]
+
+# Build matrices
+X_train <- as.matrix(fat_train[, names(fat_train) != "siri"])
+y_train <- fat_train$siri
+
+X_test  <- as.matrix(fat_test[, names(fat_test) != "siri"])
+y_test  <- fat_test$siri
+
+```
+
+```{r}
+# SLR 
+ols_mod <- lm(siri ~ ., data = fat_train)
+# summary(ols_mod)
+coef_ols <- coef(ols_mod)
+ols_pred <- predict(ols_mod, fat_test)
+
+rmse_ols <- rmse(y_test, ols_pred)
+paste("RMSE:", round(rmse_ols,3))
+```
+```{r}
+# Ridge regression: choose a reasonable labmda grid 
+lambda_grid <- seq(0, 50, length.out = 100)
+ridge_mod <- lm.ridge(siri ~ ., data = fat_train, lambda = lambda_grid)
+
+# select lambda with GCV method 
+idx <- which.min(ridge_mod$GCV)
+lambda_hat <- ridge_mod$lambda[idx]
+plot(ridge_mod$GCV)
+abline(v=idx)
+
+# Plot coefficient paths 
+matplot(ridge_mod$lambda, t(ridge_mod$coef), type="l", lty=1,
+        xlab = expression(lambda), ylab = expression(hat(beta)))
+abline(v=lambda_hat)
+paste("Lambda:", round(lambda_hat,3))
+```
+
+```{r}
+# Note: lambda = 0 --> same as OLS 
+
+# Extract standardized ridge coefficients
+b_std <- ridge_mod$coef[, idx]      # standardized slopes
+s_x   <- ridge_mod$scales           # predictor SDs
+x_m   <- ridge_mod$xm               # predictor means
+y_m   <- ridge_mod$ym               # response mean
+
+# Convert ridge coefficients to original scale 
+
+# unscale slopes:
+b_orig <- b_std / s_x
+
+# unscale intercept:
+b0_orig <- y_m - sum(b_orig * x_m)
+
+# coefficients 
+coef_ridge0 <- c(b0_orig, b_orig)
+
+# ridge prediction  
+ridge_pred <- as.vector(b0_orig + X_test %*% b_orig)
+rmse_ridge <- rmse(y_test, ridge_pred)
+paste("RMSE:", round(rmse_ridge,3))
+```
+
+```{r}
+# Fit lasso model 
+lasso_mod <- lars(X_train, y_train, type = "lasso")
+plot(lasso_mod)
+
+# choose lambda 
+set.seed(123) # ensures reproducible CV 
+cvlmod <- cv.lars(X_train, y_train, type = "lasso")
+lambda <- cvlmod$index[which.min(cvlmod$cv)]
+abline(v=lambda)
+paste("Lambda:", round(lambda, 3))
+```
+
+```{r}
+# LASSO coefficients (slopes only)
+lasso_coef <- coef(lasso_mod, s = lambda, mode = "fraction")
+
+# Means of training predictors and response
+xbar <- lasso_mod$meanx
+ybar <- lasso_mod$mu
+
+# Compute intercept manually
+lasso_intercept <- ybar - sum(xbar * lasso_coef)
+
+# Prediction function 
+lasso_pred <- as.vector(lasso_intercept + X_test %*% lasso_coef)
+
+# RMSE
+rmse_lasso <- rmse(y_test, lasso_pred)
+rmse_lasso
+```
+
+```{r}
+# Combine into table
+coef_compare <- data.frame(
+  Predictor = names(coef_ols),
+  OLS = round(coef_ols, 4),
+  Ridge0 = round(coef_ridge0, 4),
+  LASSO = round(c(lasso_mod$mu, lasso_coef), 4)
+)
+
+coef_compare
+```
+
+
+```{r}
+rmse_compare <- data.frame(
+Model = c("OLS", "Ridge", "Lasso"),
+RMSE  = c(rmse_ols, rmse_ridge, rmse_lasso)
+)
+
+rmse_compare
+```
+
+Across the three models, OLS and ridge produce identical coefficient estimates because the GCV–selected ridge penalty is $\lambda = 0$. This means ridge regression reduces exactly to the OLS solution, so no shrinkage or stabilization occurs. In contrast, the lasso model shrinks several coefficients noticeably toward zero and sets multiple predictors—such as `age`, `adipos`, `neck`, `hip`, and `wrist`—exactly to zero, indicating that these variables contribute little unique predictive value beyond the remaining predictors.
+
+Ridge regression uses an L2 penalty, which continuously shrinks coefficients toward zero but cannot set them exactly to zero. This is why every predictor remains in the ridge model—even those with very small estimated effects. In contrast, the L1 penalty in lasso produces exact zeros, performing true variable selection.
+
+Among the non-zero lasso coefficients, some are moderately reduced in magnitude relative to OLS (e.g., `weight`, `thigh`, `biceps`, `forearm`), while others increase slightly (`height`, `abdom`, `knee`). This reflects the lasso’s bias–variance trade-off: coefficients may shrink toward zero but can also adjust upward when the penalty selects a more parsimonious subset of predictors.
+
+In terms of predictive accuracy on the test set, OLS and ridge yield identical RMSE values, while the lasso model achieves the lowest RMSE (`r round(rmse_lasso,4)`). Although the improvement is modest, the lasso performs best by reducing overfitting and selecting a more compact model. Thus, for this dataset, lasso provides the most accurate and interpretable predictive model among the three.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

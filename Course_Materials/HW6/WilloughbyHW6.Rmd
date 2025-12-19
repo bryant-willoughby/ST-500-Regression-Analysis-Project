@@ -1,0 +1,143 @@
+---
+title: "WilloughbyHW6"
+author: "Bryant Willoughby"
+date: "2025-10-24"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(nlme)
+library(quantreg)
+library(MASS)
+```
+
+# Problem 1 
+
+Description: In a study of cheddar cheese, samples of cheese were analyzed for their chemical composition and were subjected to taste tests. Overall taste scores were obtained by combining the scores from several tasters. This is a data frame with 30 observations on four variables. 
+
+```{r}
+# help(cheddar)
+data(cheddar)
+head(cheddar)
+```
+
+Using the `cheddar` data, fit a linear model with `taste` as the response and the other three variables as predictors. 
+
+```{r}
+model.OLS <- lm(taste ~ ., data = cheddar)
+summary(model.OLS)
+```
+- Suppose that the observations were taken in time order. Create a time variable. Plot the residuals of the model against time and comment on what can be seen. 
+
+```{r}
+time.var <- 1:nrow(cheddar)
+cheddar <- cbind(cheddar, time.var)
+head(cheddar)
+```
+
+Notice how the residuals are decreasing linearly over time. This gives visual (informal) evidence to suggest that the errors (residuals) are correlated over time, violating one of the OLS assumptions. 
+
+```{r}
+plot(time.var, model.OLS$residuals,
+     main = "Cheddar: OLS Residuals vs Time",
+     xlab = "Time (index)",
+     ylab = "Residuals")
+abline(lm(resid(model.OLS) ~ time.var, data = cheddar), col = "red", lwd = 2)
+```
+
+- Fit a GLS model with same form as above but now allow for an AR(1) correlation among the errors. Is there evidence of such a correlation? 
+
+```{r}
+model.GLS <- gls(taste ~ Acetic + H2S + Lactic, 
+                 correlation = corAR1(form = ~ time.var),
+                 data = cheddar)
+summary(model.GLS)
+```
+
+Under the autoregressive model as seen above, $\rho$ is used to test correlated errors. Formally, we are testing $H_o: \rho = 0 \text{ vs } H_a: \rho \ne 0$. Assuming this test uses the $\alpha = 0.05$ significance level, we can use a $100(1 - (\alpha = 0.05)) = 95\%$ confidence level to address the same statistical question. That is, the below $95\%$ CI for $\rho$ contains zero. Thus, we fail to reject $H_o$ and there is not significant evidence to suggest the errors are correlated. 
+
+```{r}
+intervals(model.GLS)
+```
+
+- Fit a OLS model but now with time as an additional predictor. Investigate the significance of time in the model. 
+
+In the following OLS model, `H2S` and `Lactic` are significant predictors, as was seen in the original OLS model above. Now, the manually constructed `time.var` is also significant in this model. That suggests there is an additional time component that is missing in the original OLS model. 
+
+```{r}
+model.OLS.time <- lm(taste ~ ., data = cheddar)
+summary(model.OLS.time)
+```
+- The last two models have both allowed for an effect of time. Explain how they do this differently.
+
+The GLS model treats time as a source of autocorrelation in the residuals, whereas the OLS model treats time as an explicit predictor influencing the mean response. Since these reflect different mechanisms, it is possible to find a significant time trend in the mean (OLS + time) even when the estimated residual correlation parameter $\rho$ from the GLS model is not significant. This suggests that the apparent time pattern in the residual plot likely reflects a systematic trend in taste over time rather than serially correlated random fluctuations (errors depend on previous errors even after controlling for predictors).
+
+# Problem 2 
+
+Using the `sat` data, fit a model with `total` as the response and `takers`, `ratio`, `salary` and `expend` as predictors using the following methods: 
+
+Description: The `sat` data frame has 50 rows and 7 columns. Data were collected to study the relationship between expenditures on public education and test results. 
+
+```{r}
+# help(sat)
+data(sat)
+head(sat)
+```
+
+- Ordinary least squares 
+
+I consult the p-values here to assess significance of predictors in the model. 
+
+```{r}
+model.OLS <- lm(total ~ takers + ratio + salary + expend, data = sat)
+summary(model.OLS)
+```
+
+- Least absolute deviations 
+
+I consult the confidence intervals to assess significance in the predictors. Since the same significance level ($\alpha = 0.05$) is being used, a CI excluding zero provides evidence for a signifcant predictor. 
+
+```{r}
+model.LAD <- rq(total ~ takers + ratio + salary + expend, data = sat)
+summary(model.LAD)
+```
+
+- Huber's robust regression 
+
+
+```{r}
+round(qt(0.025, df = 45, lower.tail = F),3)
+```
+
+A predictor is significant if its respective t-test statistic has the following property: $|t| \gt 2.014$
+
+```{r}
+model.HM <- rlm(total ~ takers + ratio + salary + expend, data = sat)
+summary(model.HM)
+```
+
+Compare the results. In each case, comment on the significance of predictors. 
+
+Across all three regression methods: ordinary least squares (OLS), least absolute deviations (LAD), and Huber’s robust regression, `takers` emerges as a consistently significant predictor of total SAT score at the $\alpha=0.05$. None of the other predictors reach statistical significance across all models, suggesting that the proportion of test takers is the most stable and influential variable in explaining variation in SAT performance.
+
+The sign reversal of the `expend` coefficient in the LAD model may suggest that a few high-expenditure states exert substantial influence in the OLS and Huber fits, pulling their coefficients positive. Because LAD regression minimizes absolute rather than squared residuals, it is less sensitive to such extreme values, so its negative coefficient could reflect the trend among the majority of observations rather than the influence of outliers. However, this interpretation should be made cautiously; additional diagnostic plots (e.g., residual vs. leverage, influence measures) would be needed to confirm whether specific high-expenditure states are truly driving the difference.
+
+```{r}
+coef(model.OLS)
+coef(model.LAD)
+coef(model.HM)
+```
+
+
+
+
+
+
+
+
+
+

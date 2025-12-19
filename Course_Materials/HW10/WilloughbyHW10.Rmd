@@ -1,0 +1,299 @@
+---
+title: "WilloughbyHW10"
+author: "Bryant Willoughby"
+date: "2025-11-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(tidyverse)
+library(MASS)
+library(lars)
+library(Metrics)
+```
+
+
+# Problem 1
+
+- Fit a ridge regression model to the `seatpos` data with `hipcenter` as the response and all other variables as predictors. Take care to select an appropriate amount of shrinkage. Use the model to predict the response at the values of the predictors specified in the first question: 
+
+Age: 64.8, Weight: 263.7, HtShoes: 181.080, Ht: 178.560, Seated: 91.440, Arm: 35.640, Thigh: 40.950, Leg: 38.790
+
+- Give a discussion on the comparison of the ridge estimates with standard least squares estimates with all predictors 
+
+Data (Description): Car drivers like to adjust the seat position for their own comfort. Car designers would find it helpful to know where different drivers will position the seat depending on their size and age. Researchers collected data on 38 drivers. 
+
+```{r}
+data(seatpos)
+attach(seatpos)
+head(seatpos)
+```
+
+
+```{r}
+# Ridge regression: choose a reasonable labmda grid 
+lambda_grid <- seq(0, 50, length.out = 100)
+ridge_mod <- lm.ridge(hipcenter ~ ., data = seatpos, lambda = lambda_grid)
+
+# select lambda with GCV method 
+idx <- which.min(ridge_mod$GCV)
+lambda_hat <- ridge_mod$lambda[idx]
+plot(ridge_mod$GCV)
+abline(v=idx)
+
+# Plot coefficient paths 
+matplot(ridge_mod$lambda, t(ridge_mod$coef), type="l", lty=1,
+        xlab = expression(lambda), ylab = expression(hat(beta)))
+abline(v=lambda_hat)
+paste("Lambda", round(lambda_hat,3))
+```
+
+```{r}
+# OLS coefficients
+OLS_model <- lm(hipcenter ~ ., data = seatpos)
+ols_coef <- coef(OLS_model)
+
+# Extract standardized ridge coefficients
+b_std <- ridge_mod$coef[, idx]      # standardized slopes
+s_x   <- ridge_mod$scales           # predictor SDs
+x_m   <- ridge_mod$xm               # predictor means
+y_m   <- ridge_mod$ym               # response mean
+
+# Convert ridge coefficients to original scale 
+
+# unscale slopes:
+b_orig <- b_std / s_x
+
+# unscale intercept:
+b0_orig <- y_m - sum(b_orig * x_m)
+
+# combine intercept and slopes:
+ridge_coef_orig <- c(b0_orig, b_orig)
+names(ridge_coef_orig) <- names(ols_coef)
+
+# Comparison table
+
+coef_compare <- data.frame(
+Predictor = names(ols_coef),
+OLS = round(ols_coef, 3),
+Ridge = round(ridge_coef_orig, 3)
+)
+
+coef_compare
+```
+
+```{r}
+# OLS RMSE
+rmse_ols <- rmse(seatpos$hipcenter, OLS_model$fitted.values)
+
+# Ridge RMSE (predictions on original scale)
+ridge_fitted <- ridge_mod$ym +
+  scale(seatpos[ , -which(names(seatpos) == "hipcenter")],
+  center = ridge_mod$xm,
+  scale  = ridge_mod$scales) %*%
+  ridge_mod$coef[, idx]
+
+rmse_ridge <- rmse(seatpos$hipcenter, ridge_fitted)
+
+# RMSE comparison table
+
+rmse_compare <- data.frame(
+Model = c("OLS", "Ridge"),
+RMSE  = c(rmse_ols, rmse_ridge)
+)
+
+rmse_compare
+```
+
+
+```{r}
+# Predict hipcenter for new driver
+newdriver <- data.frame(
+  Age = 64.8,
+  Weight = 263.7,
+  HtShoes = 181.080,
+  Ht = 178.560,
+  Seated = 91.440,
+  Arm = 35.640,
+  Thigh = 40.950,
+  Leg = 38.790
+  )
+
+ridge_pred <- ridge_mod$ym +
+  scale(newdriver,
+  center = ridge_mod$xm,
+  scale  = ridge_mod$scales) %*%
+  ridge_mod$coef[, idx]
+
+ridge_pred
+
+```
+
+Ridge regression introduces shrinkage to stabilize coefficient estimates in the presence of collinear predictors. The ridge trace plot indicates the coefficients gradually shrink toward zero as $\lambda$ increases, and the selected tuning parameter ($\lambda \approx$ `r round(lambda_hat,3)`) reflects a moderate amount of regularization.
+
+Ridge regression attempts to shrink all of the slope coefficients toward zero, but the amount of shrinkage differs across predictors. The `Leg` and `HtShoes` variables show the largest change in magnitude, indicating that their OLS estimates were heavily influenced by collinearity. 
+
+In contrast, predictors like `Weight`, `Ht`, and `Seated` change less in magnitude, while their signs differ, suggesting that their underlying effects were relatively weak and unstable.
+
+The direction of the strong predictors like `Arm` and `Thigh` remain consistent, though slightly dampened. Overall, ridge stabilizes the coefficient profile, but in fact, the predictive performance (according to RMSE) is slightly worse when compared to OLS. 
+
+Finally, using the ridge model with the selected $\lambda$, the predicted hipcenter for the given driver profile is approximately **`r round(ridge_pred,2)`**, reflecting the regularized contribution of all predictors.
+
+
+# Problem 2
+Take the `fat` data and use the percentage of body fat, `siri`, as the response and the other variables, except `brozek` and `density` as potential predictors. Remove every tenth observation from the data for use as a test sample. Use the remaining data to build the following models: 
+
+- Linear regression with all predictors 
+- Ridge regression 
+- Lasso 
+
+Use the models you find to predict the response in the test sample. Make a report on the performances of the models. 
+
+Data (Description): Age, weight, height, and 10 body circumference measurements are recorded for 252 men. Each man's percentage of body fat was accurately estimated by an underwater weighing technique. 
+
+```{r}
+data(fat)
+attach(fat)
+head(fat)
+```
+
+
+```{r}
+# Remove columns brozek and density using base R
+fat <- fat[, !(names(fat) %in% c("brozek", "density"))]
+
+# Train/test split: every 10th observation
+test_idx <- seq(10, nrow(fat), by = 10)
+fat_test  <- fat[test_idx, ]
+fat_train <- fat[-test_idx, ]
+
+# Build matrices
+X_train <- as.matrix(fat_train[, names(fat_train) != "siri"])
+y_train <- fat_train$siri
+
+X_test  <- as.matrix(fat_test[, names(fat_test) != "siri"])
+y_test  <- fat_test$siri
+
+```
+
+```{r}
+# SLR 
+ols_mod <- lm(siri ~ ., data = fat_train)
+# summary(ols_mod)
+coef_ols <- coef(ols_mod)
+ols_pred <- predict(ols_mod, fat_test)
+
+rmse_ols <- rmse(y_test, ols_pred)
+paste("RMSE:", round(rmse_ols,3))
+```
+```{r}
+# Ridge regression: choose a reasonable labmda grid 
+lambda_grid <- seq(0, 50, length.out = 100)
+ridge_mod <- lm.ridge(siri ~ ., data = fat_train, lambda = lambda_grid)
+
+# select lambda with GCV method 
+idx <- which.min(ridge_mod$GCV)
+lambda_hat <- ridge_mod$lambda[idx]
+plot(ridge_mod$GCV)
+abline(v=idx)
+
+# Plot coefficient paths 
+matplot(ridge_mod$lambda, t(ridge_mod$coef), type="l", lty=1,
+        xlab = expression(lambda), ylab = expression(hat(beta)))
+abline(v=lambda_hat)
+paste("Lambda:", round(lambda_hat,3))
+```
+
+```{r}
+# Note: lambda = 0 --> same as OLS 
+
+# Extract standardized ridge coefficients
+b_std <- ridge_mod$coef[, idx]      # standardized slopes
+s_x   <- ridge_mod$scales           # predictor SDs
+x_m   <- ridge_mod$xm               # predictor means
+y_m   <- ridge_mod$ym               # response mean
+
+# Convert ridge coefficients to original scale 
+
+# unscale slopes:
+b_orig <- b_std / s_x
+
+# unscale intercept:
+b0_orig <- y_m - sum(b_orig * x_m)
+
+# coefficients 
+coef_ridge0 <- c(b0_orig, b_orig)
+
+# ridge prediction  
+ridge_pred <- as.vector(b0_orig + X_test %*% b_orig)
+rmse_ridge <- rmse(y_test, ridge_pred)
+paste("RMSE:", round(rmse_ridge,3))
+```
+
+```{r}
+# Fit lasso model 
+lasso_mod <- lars(X_train, y_train, type = "lasso")
+plot(lasso_mod)
+
+# choose lambda 
+set.seed(123) # ensures reproducible CV 
+cvlmod <- cv.lars(X_train, y_train, type = "lasso")
+lambda <- cvlmod$index[which.min(cvlmod$cv)]
+abline(v=lambda)
+paste("Lambda:", round(lambda, 3))
+```
+
+```{r}
+# LASSO coefficients (slopes only)
+lasso_coef <- coef(lasso_mod, s = lambda, mode = "fraction")
+
+# Means of training predictors and response
+xbar <- lasso_mod$meanx
+ybar <- lasso_mod$mu
+
+# Compute intercept manually
+lasso_intercept <- ybar - sum(xbar * lasso_coef)
+
+# Prediction function 
+lasso_pred <- as.vector(lasso_intercept + X_test %*% lasso_coef)
+
+# RMSE
+rmse_lasso <- rmse(y_test, lasso_pred)
+rmse_lasso
+```
+
+```{r}
+# Combine into table
+coef_compare <- data.frame(
+  Predictor = names(coef_ols),
+  OLS = round(coef_ols, 4),
+  Ridge0 = round(coef_ridge0, 4),
+  LASSO = round(c(lasso_mod$mu, lasso_coef), 4)
+)
+
+coef_compare
+```
+
+
+```{r}
+rmse_compare <- data.frame(
+Model = c("OLS", "Ridge", "Lasso"),
+RMSE  = c(rmse_ols, rmse_ridge, rmse_lasso)
+)
+
+rmse_compare
+```
+
+Across the three models, OLS and ridge produce identical coefficient estimates because the GCV–selected ridge penalty is $\lambda = 0$. This means ridge regression reduces exactly to the OLS solution, so no shrinkage or stabilization occurs. In contrast, the lasso model shrinks several coefficients noticeably toward zero and sets multiple predictors—such as `age`, `adipos`, `neck`, `hip`, and `wrist`—exactly to zero, indicating that these variables contribute little unique predictive value beyond the remaining predictors.
+
+Ridge regression uses an L2 penalty, which continuously shrinks coefficients toward zero but cannot set them exactly to zero. This is why every predictor remains in the ridge model—even those with very small estimated effects. In contrast, the L1 penalty in lasso produces exact zeros, performing true variable selection.
+
+Among the non-zero lasso coefficients, some are moderately reduced in magnitude relative to OLS (e.g., `weight`, `thigh`, `biceps`, `forearm`), while others increase slightly (`height`, `abdom`, `knee`). This reflects the lasso’s bias–variance trade-off: coefficients may shrink toward zero but can also adjust upward when the penalty selects a more parsimonious subset of predictors.
+
+In terms of predictive accuracy on the test set, OLS and ridge yield identical RMSE values, while the lasso model achieves the lowest RMSE (`r round(rmse_lasso,4)`). Although the improvement is modest, the lasso performs best by reducing overfitting and selecting a more compact model. Thus, for this dataset, lasso provides the most accurate and interpretable predictive model among the three.
+
+
+
+

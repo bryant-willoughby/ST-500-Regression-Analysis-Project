@@ -1,0 +1,865 @@
+######
+## All Lecture & Reference Code  
+## STATS 500: Regression Analysis  
+## Bryant Willoughby 
+###### 
+
+######
+## Chapter 2: Estimation 
+## Example Code 
+## Bryant Willoughby 
+######
+
+### Day 1
+
+## Load library 
+# install.packages("faraway")
+library(faraway)
+
+# Read in the data
+data(pima) # loads specified data sets 
+pima
+
+# Explore data 
+help(pima)
+
+# summary stats 
+dim(pima) #dimension of data 
+summary(pima) #numerical summaries 
+
+# missing values 
+sort(pima$diastolic)
+
+pima$diastolic[pima$diastolic == 0] = NA
+pima$glucose[pima$glucose == 0] = NA
+pima$triceps[pima$triceps == 0] = NA
+pima$insulin[pima$insulin == 0] = NA
+pima$bmi[pima$bmi == 0] = NA
+
+
+# categorical variabvle 
+pima$test = factor(pima$test)
+summary(pima$test)
+levels(pima$test) = c("negative", "positive")
+summary(pima$test)
+
+# new summary
+summary(pima)
+
+# individual summary functions 
+mean(pima$diastolic, na.rm = T)
+median(pima$diastolic, na.rm = T)
+range(pima$diastolic, na.rm = T)
+quantile(pima$diastolic, na.rm = T)
+
+# Graphical summaries (one var)
+hist(pima$diastolic)
+boxplot(pima$diastolic)
+
+# Graphical summaries (two vars) 
+plot(pima$diastolic, pima$diabetes) #scatterplot
+plot(pima$test, pima$bmi) #boxplots across levels 
+
+# scatterplot matrix 
+pairs(pima)
+
+### Day 2
+library(faraway)
+
+## Galapagos island example
+data(gala)
+gala
+
+# EDA, matrix construction, and least squares estimate
+dim(gala) #30x7
+n = dim(gala)[1]
+p = dim(gala)[2] - 2
+x = cbind(1, as.matrix(gala[, 3:7])) #design matrix
+dim(x) # 30x6
+xtx = t(x) %*% x 
+xtxi = solve(xtx) #inverse 
+beta = xtxi %*% t(x) %*% gala[,1] #least squares estimate
+beta
+
+# Residual sum of squares
+rss = sum((gala[,1] - x %*% beta)^2) #element-wise sum
+sigma2 = rss / (n - (p + 1)) #estimated variance
+sigma = sqrt(sigma2) #estimated SD 
+sigma #RMSE 
+
+# fit with lm() function 
+temp = lm(Species ~ Area + Elevation + Nearest + 
+            Scruz + Adjacent, data = gala)
+summary(temp)
+
+
+
+######
+## Chapter 3: Inference 
+## Example Code 
+## Bryant Willoughby 
+######
+
+# load data 
+library(faraway)
+help(savings)
+data(savings)
+savings <- savings
+head(savings)
+
+# fit model 
+result <- lm(sr ~ ., savings)
+summary(result)
+
+# F-test (General Linear Test)
+h0 <- lm(sr ~ pop15 + dpi + ddpi, savings) #reduced model
+h0a <- lm(sr ~ ., savings) #full model
+anova(h0, h0a)
+
+# Testing a pair
+h0 <- lm(sr ~ pop15 + ddpi, savings) 
+h0a <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings) 
+anova(h0, h0a)
+
+# Testing a subspace; testing \beta_1 = \beta_2  
+h0 <- lm(sr ~ I(pop15 + pop75) + dpi + ddpi, savings)
+h0a <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings)
+anova(h0, h0a)
+
+# Testing a subspace; tseting \beta_4 = 0.5
+h0 <- lm(sr ~ pop15 + pop75 + dpi + offset(0.5*ddpi), savings)
+h0a <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings) 
+anova(h0, h0a)
+
+# Confidence intervals; default two-sided 95%
+result <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings) 
+summary(result)
+conf <- confint(result); print(conf)
+
+# simultaneous confidence region 
+library(ellipse)
+#plot confience region 
+plot(ellipse(result, c('pop15', 'pop75')), 
+     type = 'l', xlim = c(-1,0))
+#add estimates to the plot 
+points(result$coef['pop15'], result$coef['pop75'], pch=18)
+#add origin to the plot 
+points(0,0,pch=1)
+#add confidence interval for pop15
+abline(v=conf['pop15',], lty=2)
+#add confidence interval for pop75
+abline(h=conf['pop75',], lty=2)
+
+# correlation between pop15 and pop75
+plot(x=savings$pop15, y=savings$pop75)
+cor(savings$pop15, savings$pop75) #approx -0.91
+
+
+######
+## Chapter 4: Prediction 
+## Example Code 
+## Bryant Willoughby 
+######
+
+# load data 
+library(faraway)
+help(savings)
+data(savings)
+savings <- savings
+head(savings)
+
+# confidence intervals for predictions 
+result <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings)
+#convenient way to compute CI and PI 
+x0 <- data.frame(pop15=35, pop75=2, dpi=1000, ddpi=4)
+predict(result, x0, interval = "confidence")
+predict(result, x0, interval = "prediction")
+
+# prediction band plot 
+#generate a sequence of points
+grid <- seq(20, 60, 1)
+pred <- predict(result, data.frame(pop15 = grid, pop75=2, 
+                                   dpi = 1000, ddpi = 4), interval = "confidence")
+#plot a matrix
+matplot(grid, pred, lty=c(1,2,2), col=1, type = "l", xlab = "pop15", ylab = "sr")
+rug(savings$pop15) #what is this doing? 
+
+
+######
+## Chapter 6: Diagnostics 
+## Example Code 
+## Bryant Willoughby 
+######
+
+#load in data and fit model 
+library(faraway)
+data(savings)
+result <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings)
+summary(result)
+
+# constant variance checking 
+
+#plot residuals vs fitted values 
+plot(result$fitted, result$residual, 
+     xlab = "Fitted", ylab = "Residuals")
+abline(h = 0)
+
+#plot absolute values of residuals vs fitted values 
+plot(result$fitted, abs(result$residual), 
+     xlab = "Fitted", ylab = "|Residuals|")
+#p=0.09 -> not evidence to suggest non-constant variance at 0.05 level 
+summary(lm(abs(result$residual) ~ result$fitted)) 
+
+# normal assumption checking (qq-plot)
+
+#qq-plot
+qqnorm(result$residual, ylab = "Residuals")
+qqline(result$residual)
+
+#histogram
+hist(result$residual, xlab = "Residuals")
+
+#shapiro-wilk test for normality 
+shapiro.test(result$residual) #no evidence for non-normality 
+
+#half-normal plot; identify influential points 
+halfnorm(lm.influence(result)$hat, nlab = 2, ylab = "Leverages")
+savings[c(44,49),]
+
+#(internally) studentized residuals 
+result.s <- summary(result) 
+sigma.s <- result.s$sig
+hat.s <- lm.influence(result)$hat
+stud.res <- result$residual / (sigma.s * sqrt(1 - hat.s))
+plot(stud.res, result$residuals, 
+     xlab = "Studentized Residuals", ylab = "Raw Residuals")
+
+#(externally) studentized residuals 
+ti <- rstudent(result)
+max(abs(ti))
+which(ti == max(abs(ti)))
+2*(1 - pt(max(abs(ti)), df = 50 - 5 - 1)) #compare to alpha/n, i.e. 
+0.05/50
+
+
+#compute Cook's distance 
+cook <- cooks.distance(result)
+halfnorm(cook, nlab = 3, ylab = "Cook's distance")
+savings[c(46, 23, 49),]
+
+#fit model w/o Libya (highest cook's distance points)
+result.libya <- lm(sr ~ pop15 + pop75 + dpi + ddpi, data = savings, 
+                   subset = (cook < max(cook)))
+summary(result.libya)
+
+#compute change in coefficients 
+result.inf <- lm.influence(result)
+plot(result.inf$coef[,2], result.inf$coef[,3], 
+     xlab = "Change in beta2", 
+     ylab = "Change in beta3")
+savings[c(21, 23, 49),]
+
+# Label selected points 21, 23, 49
+idx <- c(21, 23, 49)
+x <- result.inf$coef[idx, 2]
+y <- result.inf$coef[idx, 3]
+points(x, y, pch = 19, col = "blue")
+labs <- as.character(idx)# or: as.character(idx) if no row names
+text(x, y, labels = labs, pos = 1, cex = 0.8, col = "blue", offset = 0.4)
+
+
+#partial regression plot 
+#looking for any deviation from linearity, outliers, influential points, etc. 
+delta <- residuals(lm(sr ~ pop75 + dpi + ddpi, data = savings))
+gamma <- residuals(lm(pop15 ~ pop75 + dpi + ddpi, data = savings))
+plot(gamma, delta, xlab = "Pop15 Residuals")
+temp <- lm(delta ~ gamma)
+abline(reg = temp)
+
+#partial residual plot 
+#checking for any unusual patterns 
+#notice: two distinct groups according to pop15
+plot(savings$pop15, result$residuals + coef(result)['pop15']*savings$pop15, xlab = "Pop15", 
+     ylab = "Savings (adjusted for pop15)")
+abline(a = 0, b = coef(result)['pop15'])
+
+#plot residuals vs. predictors 
+plot(savings$pop15, result$residual, 
+     xlab = "Population under 15", 
+     ylab = "Residuals")
+plot(savings$pop75, result$residual, 
+     xlab = "Population over 75", 
+     ylab = "Residuals")
+
+#two separate regressions on two groups 
+temp1 <- lm(sr ~ pop15 + pop75 + dpi + ddpi, data = savings, 
+            subset = (pop15 > 35))
+summary(temp1) #all vars insignificant 
+temp2 <- lm(sr ~ ., data = savings, subset = (pop15 < 35))
+summary(temp2) #two significant variables
+
+
+
+######
+## Chapter 7: Problem with Predictors 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+library(faraway)
+data(savings)
+result <- lm(sr ~ ., data = savings)
+summary(result)
+
+#scale one pred var 
+summary(lm(sr ~ pop15 + pop75 + I(dpi/1000) + ddpi, savings))
+
+#standardize all variables 
+#note: intercept term practically zero 
+sctemp <- data.frame(scale(savings))
+summary(lm(sr ~ ., data = sctemp))
+
+
+## Car dataset 
+data(seatpos)
+result <- lm(hipcenter ~ ., data = seatpos)
+summary(result)
+
+#correlation matrix 
+round(cor(seatpos[,-9]),2) #excluding response var 
+
+#condition number
+#large k (> 30) --> presence of collinearity 
+X <- model.matrix(result)[,-1] #exclude intercept
+e <- eigen(t(X) %*% X)
+# e$val
+round(sqrt(e$val[1]/e$val), 3)
+
+#variance inflation factor (VIF)
+#large VIF (>10) --> presence of collinearity 
+round(vif(X), 3)
+
+#sensitivity to measurement errors 
+# make sure random error scale is similar to normal RV scale 
+junk <- lm(hipcenter + 10*rnorm(38) ~ ., data = seatpos)
+summary(junk)
+
+#correlation of variables measuring length 
+round(cor(X[, 3:8]), 2)
+
+#using subset of predictor vars 
+#dropping highly correlated predictors
+result2 <- lm(hipcenter ~ Age + Weight + Ht, data = seatpos)
+summary(result2)
+
+
+######
+## Chapter 8: Problems with Errors 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+library(faraway)
+
+## French Election Example 
+# help(fpe)
+data(fpe)
+
+# fit a linear model with no intercept 
+# weighted least squares 
+g <- lm(A2 ~ A+B+C+D+E+F+G+H+J+K+N-1, 
+        data=fpe, weights = 1/EI)
+round(g$coef, 3)
+
+# fit OLS model with no intercept 
+# larger county sizes dominate results 
+# unweighted least squares
+lm(A2 ~ A+B+C+D+E+F+G+H+J+K+N-1, data=fpe)      
+
+# set coefficients bigger than 1 to 1 
+lm(A2 ~ offset(A+G+K)+C+D+E+F+J+N-1, data=fpe, weights = 1/EI)$coef
+
+# remove coefficients less than 0 (i.e. drop J)
+lm(A2 ~ offset(A+G+K)+C+D+E+F+N-1, data=fpe, weights = 1/EI)$coef
+
+## Longley Data Example
+# help(longley)
+data(longley)
+g <- lm(Employed ~ GNP + Population, data=longley)
+summary(g)
+
+# fit GLS with AR(1) structure 
+library(nlme)
+g <- gls(Employed ~ GNP + Population, 
+         correlation = corAR1(form = ~ Year), 
+         data = longley)
+summary(g)
+
+# testing \rho = 0
+# CI excludes 0; evidence to suggest correlated errors
+intervals(g)
+
+
+## Gala data example 
+data(gala)
+g <- lm(Species ~ Area + Elevation + Nearest + Scruz + Adjacent, 
+        data = gala)
+summary(g)
+
+# huber's method 
+# consistency w/ significance of preds from above OLS results 
+# minor deviations in coefficients; signs are similar 
+library(MASS)
+ghuber <- rlm(Species ~ Area + Elevation + Nearest + Scruz + Adjacent, 
+              data = gala)
+summary(ghuber)
+
+# least-absolute deviations 
+# Adjacent term no longer statistically significant 
+library(quantreg) # quantile regression 
+glad <- rq(Species ~ Area + Elevation + Nearest + Scruz + Adjacent, 
+           data = gala)
+summary(glad)
+
+
+
+######
+## Chapter 9: Transformation  
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+library(faraway)
+
+## Savings and Galapagos Tortoise Examples 
+library(MASS)
+
+# Box-Cox method for Savings data 
+g <- lm(sr ~ pop15 + pop75 + dpi + ddpi, savings)
+boxcox(g, plotit=T)
+boxcox(g, plotit=T, lambda = seq(0.5, 1.5, by=0.1))
+
+# Box-Cox method for Toirtoise data 
+# lambda approx 1/3 more appropriate 
+g <- lm(Species ~ Area + Elevation + Nearest + 
+          Scruz + Adjacent, gala)
+boxcox(g, plotit=T)
+boxcox(g, plotit=T, lambda = seq(0, 1, by=0.05))
+
+
+# Transformation in the Tortoise example 
+summary(lm(Species ~ Area + Elevation + Nearest + 
+             Scruz + Adjacent, gala))
+summary(lm(Species^(1/3) ~ Area + Elevation + Nearest + 
+             Scruz + Adjacent, gala))
+
+# Savings Example 
+attach(savings)
+
+# polynomials 
+
+## forward selection 
+
+# 1st degree 
+summary(lm(sr ~ ddpi))
+
+# 2nd degree; d = 2; significant terms 
+summary(lm(sr ~ ddpi + I(ddpi^2)))
+
+# 3rd degree; d = 3; insignificant cubic term 
+# correlated higher-order terms => all terms now not significant 
+summary(lm(sr ~ ddpi + I(ddpi^2) + I(ddpi^3)))
+
+
+## backwards selection 
+
+# artificial data; transforming predictor first 
+# not significant linear term; contradicts above result w.r.t linear term 
+# higher order significance (can be) influenced by transformed preds 
+mddpi = ddpi - 10
+summary(lm(sr ~ mddpi + I(mddpi^2)))
+
+# orthogonal polynomials 
+# default orthogonal predictor fitting using poly() 
+# raw = T => raw data without orthogonal transform 
+summary(lm(sr ~ poly(ddpi, 4)))
+
+# polynomials in several predictors 
+# consult output here 
+g = lm(sr ~ polym(pop15, ddpi, degree = 2))
+summary(g)
+
+## Simulation example 
+
+# y = sin^3(2*pi*x^3) + \epsilon 
+
+# data generation 
+myf = function(x) sin(2*pi*x^3)^3
+set.seed()
+x = seq(0, 1, by = 0.01)
+y = myf(x) + 0.1*rnorm(101)
+matplot(x, cbind(y, myf(x)), type = "ll")
+
+# polynomials 
+g4 = lm(y ~ poly(x, 4))
+g12 = lm(y ~ poly(x, 12))
+matplot(x, cbind(y, g4$fit, g12$fit), type = "lll")
+
+# regression splines 
+# smooth spline curve fits simulated data very well 
+library(splines)
+knots = c(0, 0, 0, 0, 0.2, 0.4, 0.5, 0.6, 
+          0.7, 0.8, 0.85, 0.9, 1, 1, 1, 1)
+bx = splineDesign(knots, x)
+gs = lm(y ~ bx)
+matplot(x, bx, type = "l")
+matplot(x, cbind(y, gs$fit), type = "ll")
+
+
+
+
+######
+## Chapter 10: Variable Selection 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+
+## Life Expectancy Example (cont)
+data(state)
+
+# reassemble the data (add row names)
+# Area largest p-value
+statedata = data.frame(state.x77, row.names = state.abb)
+g = lm(Life.Exp ~ .,  data = statedata)
+summary(g)
+
+# backward elimination - drop largest p-value 
+g = update(g, . ~ . - Area)
+summary(g)
+
+# continue dropping 
+g = update(g, . ~ . - Illiteracy)
+summary(g)
+
+# continue dropping 
+g = update(g, . ~ . - Income)
+summary(g)
+
+# borderline case; would keep for prediction; illustrate dropping 
+g = update(g, . ~ ., - Population)
+summary(g)
+
+# cannot conclude other predictors have no effect on response, e.g. Illiteracy
+# still appears significant w/ new fitted model (not obtained from above process)
+summary(lm(Life.Exp ~ Illiteracy + Murder + Frost, statedata))
+
+## AIC 
+g = lm(Life.Exp ~ ., data = statedata) 
+step(g) #k = 2 default 
+
+## Adjusted-R^2 
+# using best subset selection 
+library(leaps)
+b = regsubsets(Life.Exp ~ ., data = statedata)
+summary(b)
+
+# plot adj R^2 against p + 1 
+rs = summary(b)
+plot(2:8, rs$adjr2, xlab = "No. of Parameters", 
+     ylab = "Adjusted Rsq")
+
+# select model with largest adjusted R^2
+which.max(rs$adjr2)
+
+## Mallows Cp 
+b = regsubsets(Life.Exp ~ ., data = statedata)
+summary(b)
+which.min(rs$cp)
+
+plot(2:8, rs$cp, xlab = "No. of Parameters", 
+     ylab = "Cp")
+abline(0, 1)
+
+######
+## Chapter 11: Shrinkage Methods 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+
+# Load necessary libraries  
+library(faraway)
+library(MASS)
+library(lars)
+library(Metrics)
+
+# Food Analyzer Example 
+# response: fat content 
+# predictors: 100 channel spectrum of absorbances
+data(meatspec); dim(meatspec)
+matplot(t(meatspec[c(1:10), c(1:100)]), pch = "*", 
+        xlab = "channel spectrums", ylab = "absorbances")
+
+# Data (n = 215); preds (p = 10)
+# training: 172, test: 43
+trainmeat = meatspec[1:172,]
+testmeat = meatspec[173:215,]
+
+# Ridge regression 
+# lm.ridge: automatically centers training data 
+# candidate set of tuning parameters: seq-range below:
+modridge = lm.ridge(fat ~ ., lambda = seq(0, 5e-8, 1e-9), 
+                    data = trainmeat)
+matplot(modridge$lambda, t(modridge$coef), type="l", lty=1,
+        xlab = expression(lambda), ylab = expression(hat(beta)))
+
+# select an appropriate lambda
+# use CV procedure to select appropriate lambda 
+# Select lambda by minimizing GCV
+idx <- which.min(modridge$GCV)
+lambda_hat <- modridge$lambda[idx]
+abline(v=lambda_hat)
+lambda_hat
+
+plot(modridge$GCV)
+abline(v=idx)
+
+
+# compute fitted results manually 
+# modridge$coef: after standardization 
+# modridge$coef[,19]: original scale
+yfit = modridge$ym + scale(trainmeat[,-101], center=modridge$xm, 
+                           scale=modridge$scales) %*% modridge$coef[,idx]
+rmse(yfit, trainmeat$fat)
+
+# predict on test data 
+ypred = modridge$ym + scale(testmeat[,-101], center=modridge$xm, 
+                            scale=modridge$scales) %*% modridge$coef[,idx]
+rmse(ypred, testmeat$fat)
+
+
+# Life Expectancy Example 
+# census data from 50 states 
+# response: life expectancy in years (1969-71)
+data(state)
+statedata <- data.frame(state.x77, row.names = state.abb)
+
+# Lasso Example 
+lmod <- lars(as.matrix(statedata[,-4]), statedata$Life)
+plot(lmod)
+
+# Laso: picking \lambda or t 
+# utilize 10-fold cross validation 
+cvlmod <- cv.lars(as.matrix(statedata[,-4]), statedata$Life)
+lambda = cvlmod$index[which.min(cvlmod$cv)]
+abline(v=lambda)
+
+# fit model with selected lambda 
+# 3 predictors numerically zero 
+# lasso coefs are smaller in magnitude, i.e. are shrinking towrads zero
+predict(lmod, s = lambda, type = "coef", mode = "fraction")$coef
+coef(lm(Life.Exp ~ Population + Murder + HS.Grad + Frost, statedata))
+
+######
+## Chapter: Binomial Data 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+# load libraries 
+library(faraway)
+
+# Challenger Disaster Data 
+data(orings)
+
+# fit linear model to observed proportions 
+# clearly inappropriate here 
+# there are 6 possible oring failures 
+plot(damage/6 ~ temp, orings, xlim = c(25, 85), 
+     ylim = c(0, 1), ylab = "Probability of damage")
+abline(lm(damage/6 ~ temp, orings))
+
+# fit a logistic regression model 
+# Y = damage or not; cbind(Y_i, n_i - Y_i)
+# logistic link function for binomial data 
+logitm = glm(cbind(damage, 6-damage) ~ temp, 
+             family = binomial(link = logit), data = orings)
+summary(logitm)
+
+
+# estimate prob at temp = 31
+# ilogit: computes inverse logit transformation 
+test = data.frame(temp=31)
+ilogit(predict(logitm, test))
+
+# fit a probit model to compare 
+probitm = glm(cbind(damage, 6-damage) ~ temp, 
+              family = binomial(link = probit), data = orings)
+summary(probitm)
+
+
+# probit prediction at temp = 31 
+# pnorm: normal cdf prob. calculation 
+pnorm(predict(probitm, test))
+
+# make predictions for the whole range and plot 
+range = data.frame(temp = seq(25, 85, by = 1))
+pred.l = ilogit(predict(logitm, range))
+pred.p = pnorm(predict(probitm, range))
+matplot(range, cbind(pred.l, pred.p), xlim = c(25, 85), 
+        ylim = c(0, 1), xlab = "Temperature", ylab = "Prob of damage", 
+        type = "ll", lty = c('solid', 'dashed'))
+
+######
+## Chapter: Binomial Data 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+# load libraries 
+library(faraway)
+library(MASS)
+
+# Challenger Disaster Data 
+data(orings)
+
+# fit linear model to observed proportions 
+# clearly inappropriate here 
+# there are 6 possible oring failures 
+plot(damage/6 ~ temp, orings, xlim = c(25, 85), 
+     ylim = c(0, 1), ylab = "Probability of damage")
+abline(lm(damage/6 ~ temp, orings))
+
+# fit a logistic regression model 
+# Y = damage or not; cbind(Y_i, n_i - Y_i)
+# logistic link function for binomial data 
+logitm = glm(cbind(damage, 6-damage) ~ temp, 
+             family = binomial(link = logit), data = orings)
+summary(logitm)
+
+
+# estimate prob at temp = 31
+# ilogit: computes inverse logit transformation 
+test = data.frame(temp=31)
+ilogit(predict(logitm, test))
+
+# fit a probit model to compare 
+probitm = glm(cbind(damage, 6-damage) ~ temp, 
+              family = binomial(link = probit), data = orings)
+summary(probitm)
+
+
+# probit prediction at temp = 31 
+# pnorm: normal cdf prob. calculation 
+pnorm(predict(probitm, test))
+
+# make predictions for the whole range and plot 
+range = data.frame(temp = seq(25, 85, by = 1))
+pred.l = ilogit(predict(logitm, range))
+pred.p = pnorm(predict(probitm, range))
+matplot(range, cbind(pred.l, pred.p), xlim = c(25, 85), 
+        ylim = c(0, 1), xlab = "Temperature", ylab = "Prob of damage", 
+        type = "ll", lty = c('solid', 'dashed'))
+
+# Goodness of fit test 
+
+# compare null to model with temperature 
+# null: intercept model; alternative: fitted model 
+# small p; reject null; evidence in favor of fitted model 
+pchisq(logitm$null.dev - logitm$dev, 
+       df = logitm$df.null - logitm$df.resid, lower.tail=F)
+
+# deviance test
+# null: fitted model; alternative: saturated model (least restrictive)
+# p = 0.72; FTR null; significant fitted model
+pchisq(logitm$dev, df = logitm$df.resid, 
+       lower.tail = F)
+
+# Pearson's chi-squared 
+# null: fitted model alternative: saturated model
+# p=0.14; FTR null; significant fitted model 
+X2 = sum(residuals(logitm, type="pearson")^2)
+pchisq(X2, df=logitm$df.residual, lower=F)
+
+
+# Confidence Intervals for Parameters 
+confint(logitm)
+
+# Confidence intervals for predictions 
+# test: temp = 31
+predict(logitm, test, se=T)
+# 95% CI for p(xo)
+ilogit(c(4.959746 - 1.96*1.66731, 4.959746 + 1.96*1.66731))
+
+## Trout data 
+data(troutegg)
+attach(troutegg)
+
+# fit model 
+# intercept model alone does not fit data well 
+# large residual deviance --> not good fit (maybe overdispersion)
+tmod = glm(cbind(survive, total-survive) ~ location + period, 
+           family = "binomial", data  = troutegg)
+summary(tmod)
+
+# estimate sigma2 
+# 12 = n - (p + 1)
+sigma2 = sum(residuals(tmod, type="pearson")^2)/12
+sigma2 #5.33; should be around 1 if binomial data assumption satisfied 
+
+
+drop1(tmod, scale=sigma2, test="F") #don't need to drop anything
+
+# use estimated dispersion to recompute p-values; check new model fit 
+# estimated coefficients unchanged 
+# SE are about 2/3 times larger (sqrt(5.33)) and corresponding z-test & p-val
+# note: cannot use deviance for goodness of fit measure 
+# instead use approximate F-test as needed
+summary(tmod, dispersion=sigma2)
+
+######
+## Chapter: Poisson Data 
+## Example Code 
+## Bryant Willoughby 
+###### 
+
+# load libraries 
+library(faraway)
+
+
+## Galapagos example 
+# modeling the number of species of tortoise 
+# many small counts; normal approx. may not be accurate 
+data(gala)
+help(gala)
+attach(gala)
+
+# remove endemics variable 
+gala = gala[,-2]
+
+
+# fit poisson regression 
+# neither the intercept or current model fit the data well 
+# (possibly due to overdispersion)
+galap = glm(Species ~ ., family=poisson, data=gala)
+summary(galap)
+
+# plot estimated variance against the mean 
+# larger variance for larger mean values
+# informal (visual) evidence to suggest instead estimate variance 
+plot(galap$fit, residuals(galap, type="response")^2, 
+     xlab = expression(hat(mu)), 
+     ylab = expression((y - hat(mu))^2))
+
+# estimate sigma2
+# est \approx 31
+# should be around 1 if poisson data assumption satisfied 
+sigma2 = sum(residuals(galap, type="pearson")^2 / galap$df.res)
+sigma2
+
+# use estimated dispersion to recompute p-values; check new model fit 
+# estimated coefficients unchanged
+# SEs and correspnoding testing results are changed 
+summary(galap, dispersion=sigma2)
+

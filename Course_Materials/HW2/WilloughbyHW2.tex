@@ -1,0 +1,579 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={WilloughbyHW2},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{WilloughbyHW2}
+\author{}
+\date{\vspace{-2.5em}}
+
+\begin{document}
+\maketitle
+
+\section{Problem 1a: Load data and
+inspect}\label{problem-1a-load-data-and-inspect}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load data}
+\FunctionTok{library}\NormalTok{(faraway)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Warning: package 'faraway' was built under R version 4.4.3
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{data}\NormalTok{(uswages)}
+\CommentTok{\# Ensure dataset loaded as object}
+\FunctionTok{str}\NormalTok{(uswages)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 'data.frame':    2000 obs. of  10 variables:
+##  $ wage : num  772 617 958 617 902 ...
+##  $ educ : int  18 15 16 12 14 12 16 16 12 12 ...
+##  $ exper: int  18 20 9 24 12 33 42 0 36 37 ...
+##  $ race : int  0 0 0 0 0 0 0 0 0 0 ...
+##  $ smsa : int  1 1 1 1 1 1 1 1 1 0 ...
+##  $ ne   : int  1 0 0 1 0 0 0 0 0 0 ...
+##  $ mw   : int  0 0 0 0 1 0 0 1 0 1 ...
+##  $ so   : int  0 0 1 0 0 0 1 0 0 0 ...
+##  $ we   : int  0 1 0 0 0 1 0 0 1 0 ...
+##  $ pt   : int  0 0 0 0 0 0 1 1 1 0 ...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{head}\NormalTok{(uswages)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##         wage educ exper race smsa ne mw so we pt
+## 6085  771.60   18    18    0    1  1  0  0  0  0
+## 23701 617.28   15    20    0    1  0  0  0  1  0
+## 16208 957.83   16     9    0    1  0  0  1  0  0
+## 2720  617.28   12    24    0    1  1  0  0  0  0
+## 9723  902.18   14    12    0    1  0  1  0  0  0
+## 22239 299.15   12    33    0    1  0  0  0  1  0
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# remove experience var vals less than 0}
+\NormalTok{pos.exper.vals }\OtherTok{\textless{}{-}}\NormalTok{ uswages}\SpecialCharTok{$}\NormalTok{exper }\SpecialCharTok{\textgreater{}=} \DecValTok{0}
+\NormalTok{uswages }\OtherTok{\textless{}{-}}\NormalTok{ uswages[pos.exper.vals,]}
+
+\CommentTok{\# Numeric summaries}
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Numeric summary (status, wage, educ, exper):}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Numeric summary (status, wage, educ, exper):
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(}\FunctionTok{summary}\NormalTok{(uswages[}\FunctionTok{c}\NormalTok{(}\StringTok{"wage"}\NormalTok{, }\StringTok{"educ"}\NormalTok{, }\StringTok{"exper"}\NormalTok{)]))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##       wage              educ           exper      
+##  Min.   :  50.39   Min.   : 0.00   Min.   : 0.00  
+##  1st Qu.: 314.69   1st Qu.:12.00   1st Qu.: 8.00  
+##  Median : 522.32   Median :12.00   Median :16.00  
+##  Mean   : 613.99   Mean   :13.08   Mean   :18.74  
+##  3rd Qu.: 783.48   3rd Qu.:16.00   3rd Qu.:27.00  
+##  Max.   :7716.05   Max.   :18.00   Max.   :59.00
+\end{verbatim}
+
+Notice the relative right skew of \texttt{wage}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{3}\NormalTok{))}
+\FunctionTok{hist}\NormalTok{(uswages}\SpecialCharTok{$}\NormalTok{wage, }\AttributeTok{main =} \StringTok{"Histogram of wage"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"wage"}\NormalTok{)}
+\FunctionTok{hist}\NormalTok{(uswages}\SpecialCharTok{$}\NormalTok{educ, }\AttributeTok{main =} \StringTok{"Histogram of educ"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"educ"}\NormalTok{)}
+\FunctionTok{hist}\NormalTok{(uswages}\SpecialCharTok{$}\NormalTok{exper, }\AttributeTok{main =} \StringTok{"Histogram of exper"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"exper"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW2_files/figure-latex/unnamed-chunk-3-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{par}\NormalTok{(}\AttributeTok{mfrow =} \FunctionTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{, }\DecValTok{1}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\section{Problem 1a: Fit Regression
+model}\label{problem-1a-fit-regression-model}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(wage }\SpecialCharTok{\textasciitilde{}}\NormalTok{ educ }\SpecialCharTok{+}\NormalTok{ exper, uswages)}
+\FunctionTok{summary}\NormalTok{(model)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = wage ~ educ + exper, data = uswages)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -1014.7  -235.2   -52.1   150.1  7249.2 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)    
+## (Intercept) -239.1146    50.7111  -4.715 2.58e-06 ***
+## educ          51.8654     3.3423  15.518  < 2e-16 ***
+## exper          9.3287     0.7602  12.271  < 2e-16 ***
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 426.8 on 1964 degrees of freedom
+## Multiple R-squared:  0.1348, Adjusted R-squared:  0.1339 
+## F-statistic:   153 on 2 and 1964 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+\section{\texorpdfstring{Problem 1b:
+\((Adj) R^2\)}{Problem 1b: (Adj) R\^{}2}}\label{problem-1b-adj-r2}
+
+13.39\% of the variability in \texttt{wage} can be explained by the
+association with its predictors, \texttt{education} and
+\texttt{experience}, under the fitted regression model.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(model)}\SpecialCharTok{$}\NormalTok{adj.r.squared}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 0.133912
+\end{verbatim}
+
+\section{Problem 1c: Largest
+Residual}\label{problem-1c-largest-residual}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{resid.vals }\OtherTok{\textless{}{-}} \FunctionTok{residuals}\NormalTok{(model)}
+\NormalTok{fitted.vals }\OtherTok{\textless{}{-}} \FunctionTok{fitted}\NormalTok{(model)}
+
+\CommentTok{\# index via which.max, then report the rowname (label)}
+\NormalTok{max\_res\_index }\OtherTok{\textless{}{-}} \FunctionTok{which.max}\NormalTok{(resid.vals)}
+\NormalTok{obs\_label }\OtherTok{\textless{}{-}} \FunctionTok{rownames}\NormalTok{(uswages)[max\_res\_index]}
+
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Observation (case number) with largest positive residual:"}\NormalTok{, obs\_label, }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Observation (case number) with largest positive residual: 15387
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(uswages[obs\_label,])}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##          wage educ exper race smsa ne mw so we pt
+## 15387 7716.05    3    59    0    1  0  0  1  0  1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Largest positive residual value:"}\NormalTok{, resid.vals[max\_res\_index], }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Largest positive residual value: 7249.174
+\end{verbatim}
+
+\section{Problem 1d: Means and medians with
+labels}\label{problem-1d-means-and-medians-with-labels}
+
+The mean of the residuals, as expected, is essentially zero. Ordinary
+least squares (OLS) with an intercept assumes this property. However,
+the median residual value is approximately -52. That is, the model tends
+to overpredict for most cases. This suggests a few large positive
+residuals are balancing many negative residuals.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"Mean residual:"}\NormalTok{, }\FunctionTok{mean}\NormalTok{(resid.vals), }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Mean residual: -4.99205969450178e-15
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"Median residual:"}\NormalTok{, }\FunctionTok{median}\NormalTok{(resid.vals), }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Median residual: -52.1433717055574
+\end{verbatim}
+
+\section{Problem 1e: Coefficient
+Interpretation}\label{problem-1e-coefficient-interpretation}
+
+Holding education constant, an additional year of experience predicts a
+9.77 unit increase in wage.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{summary}\NormalTok{(model)}\SpecialCharTok{$}\NormalTok{coefficients}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                Estimate Std. Error   t value     Pr(>|t|)
+## (Intercept) -239.114574  50.711093 -4.715232 2.584208e-06
+## educ          51.865382   3.342263 15.518044 2.563816e-51
+## exper          9.328719   0.760197 12.271451 2.086089e-33
+\end{verbatim}
+
+\section{problem 1f: Residual
+Analysis}\label{problem-1f-residual-analysis}
+
+The correlation \textasciitilde9.87e-17 is effectively zero, indicating
+no linear association between residuals and fitted values.
+Geometrically, this reflects that the OLS projects y onto the column
+space of X, so the residual vector is orthogonal to the fitted vector
+(\(X\hat{\beta}\)) and hence has a zero inner product.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"Correlation of residuals with fitted values:"}\NormalTok{, }\FunctionTok{cor}\NormalTok{(resid.vals, fitted.vals), }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Correlation of residuals with fitted values: 9.8671685777101e-17
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# plot with large y padding and highlight the observation}
+\FunctionTok{plot}\NormalTok{(fitted.vals, resid.vals,}
+     \AttributeTok{main =} \StringTok{"Residuals vs Fitted (highlight)"}\NormalTok{,}
+     \AttributeTok{xlab =} \StringTok{"Fitted values"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"Residuals"}\NormalTok{,}
+     \AttributeTok{ylim =} \FunctionTok{c}\NormalTok{(}\FunctionTok{min}\NormalTok{(resid.vals) }\SpecialCharTok{{-}} \DecValTok{100}\NormalTok{, }\FunctionTok{max}\NormalTok{(resid.vals) }\SpecialCharTok{+} \DecValTok{100}\NormalTok{))}
+\FunctionTok{text}\NormalTok{(fitted.vals, resid.vals, }\AttributeTok{labels =} \FunctionTok{rownames}\NormalTok{(uswages), }\AttributeTok{pos =} \DecValTok{4}\NormalTok{, }\AttributeTok{cex =} \FloatTok{0.6}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\AttributeTok{h =} \DecValTok{0}\NormalTok{, }\AttributeTok{col =} \StringTok{"grey"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW2_files/figure-latex/unnamed-chunk-9-1.pdf}}
+
+\section{\texorpdfstring{Problem 2 (Unbiasedness of
+\hat{\sigma^2})}{Problem 2 (Unbiasedness of )}}\label{problem-2-unbiasedness-of}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{500problem2.png}}
+\caption{Figure 1: Problem 2 image}
+\end{figure}
+
+\section{Problem 3: Polynomial regression --- compare lm() vs direct
+OLS}\label{problem-3-polynomial-regression-compare-lm-vs-direct-ols}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{) }\CommentTok{\#for reproducibility}
+\NormalTok{x }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{:}\DecValTok{20}
+\NormalTok{y }\OtherTok{\textless{}{-}}\NormalTok{ x }\SpecialCharTok{+} \FunctionTok{rnorm}\NormalTok{(}\DecValTok{20}\NormalTok{)}
+\FunctionTok{plot}\NormalTok{(x, y, }\AttributeTok{main =} \StringTok{"Artificial data: y = x + noise"}\NormalTok{, }\AttributeTok{xlab =} \StringTok{"x"}\NormalTok{, }\AttributeTok{ylab =} \StringTok{"y"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW2_files/figure-latex/unnamed-chunk-10-1.pdf}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\DocumentationTok{\#\# helper functions }
+
+\NormalTok{poly\_design }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(x, degree) \{}
+  \CommentTok{\# Create Vandermonde design matrix: columns 1, x, x\^{}2, ..., x\^{}degree}
+\NormalTok{  X }\OtherTok{\textless{}{-}} \FunctionTok{sapply}\NormalTok{(}\DecValTok{0}\SpecialCharTok{:}\NormalTok{degree, }\ControlFlowTok{function}\NormalTok{(d) x}\SpecialCharTok{\^{}}\NormalTok{d)}
+\NormalTok{  X }\OtherTok{\textless{}{-}} \FunctionTok{as.matrix}\NormalTok{(X)}
+  \FunctionTok{colnames}\NormalTok{(X) }\OtherTok{\textless{}{-}} \FunctionTok{paste0}\NormalTok{(}\StringTok{"x\^{}"}\NormalTok{, }\DecValTok{0}\SpecialCharTok{:}\NormalTok{degree)}
+  \FunctionTok{return}\NormalTok{(X)}
+\NormalTok{\}}
+
+\NormalTok{ols\_coef }\OtherTok{\textless{}{-}} \ControlFlowTok{function}\NormalTok{(X, y) \{}
+  \CommentTok{\# Compute OLS coefficients via normal equations: (X\textquotesingle{}X)\^{}\{{-}1\} X\textquotesingle{} y}
+\NormalTok{  X }\OtherTok{\textless{}{-}} \FunctionTok{as.matrix}\NormalTok{(X)}
+\NormalTok{  y }\OtherTok{\textless{}{-}} \FunctionTok{as.numeric}\NormalTok{(y)}
+\NormalTok{  coef }\OtherTok{\textless{}{-}} \FunctionTok{solve}\NormalTok{(}\FunctionTok{t}\NormalTok{(X) }\SpecialCharTok{\%*\%}\NormalTok{ X, }\FunctionTok{t}\NormalTok{(X) }\SpecialCharTok{\%*\%}\NormalTok{ y)}
+  \FunctionTok{return}\NormalTok{(}\FunctionTok{as.numeric}\NormalTok{(coef))}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# initialize results df }
+\NormalTok{results }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}\AttributeTok{degree =} \FunctionTok{integer}\NormalTok{(), }\AttributeTok{method =} \FunctionTok{character}\NormalTok{(), }\AttributeTok{status =} \FunctionTok{character}\NormalTok{(), }\AttributeTok{stringsAsFactors =}\NormalTok{ F)}
+
+\ControlFlowTok{for}\NormalTok{ (deg }\ControlFlowTok{in} \DecValTok{1}\SpecialCharTok{:}\DecValTok{10}\NormalTok{)\{}
+  \CommentTok{\# Iterate polynomial degrees to compare two estimation methods: }
+  \CommentTok{\# (1) lm() uses raw polynomial terms (I(x\^{}k))}
+  \CommentTok{\# (2) Direect OLS via normal equation }
+  \CommentTok{\# For each degree: }
+  \DocumentationTok{\#\# {-} fit model with lm() and prints coefficients}
+  \DocumentationTok{\#\# {-} constructs the Vandermonde design matrix X; attempt to compute OLS coefs using solve() }
+  \DocumentationTok{\#\# {-} records success or failure (due to singular/ill{-}conditioned X\textquotesingle{}X)}
+  \DocumentationTok{\#\# {-} stops if/when OLS fails}
+  
+  \CommentTok{\# fit with lm() using raw polynomial terms }
+  \FunctionTok{cat}\NormalTok{(}\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{{-}{-}{-} Degree"}\NormalTok{, deg, }\StringTok{"{-}{-}{-}}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\NormalTok{  formula\_terms }\OtherTok{\textless{}{-}} \ControlFlowTok{if}\NormalTok{ (deg }\SpecialCharTok{\textgreater{}=} \DecValTok{1}\NormalTok{) }\FunctionTok{paste0}\NormalTok{(}\StringTok{"I(x\^{}"}\NormalTok{, }\DecValTok{1}\SpecialCharTok{:}\NormalTok{deg, }\StringTok{")"}\NormalTok{, }\AttributeTok{collapse =} \StringTok{" + "}\NormalTok{) }\ControlFlowTok{else} \StringTok{""}
+\NormalTok{  lm\_formula }\OtherTok{\textless{}{-}} \FunctionTok{as.formula}\NormalTok{(}\FunctionTok{paste}\NormalTok{(}\StringTok{"y \textasciitilde{}"}\NormalTok{, formula\_terms))}
+\NormalTok{  fit\_lm }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(lm\_formula)}
+  \FunctionTok{cat}\NormalTok{(}\StringTok{"lm() coefficients:}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+  \FunctionTok{print}\NormalTok{(}\FunctionTok{coef}\NormalTok{(fit\_lm))}
+  
+  \CommentTok{\# build design matrix and try direct OLS}
+\NormalTok{  X }\OtherTok{\textless{}{-}} \FunctionTok{poly\_design}\NormalTok{(x, deg)}
+  \FunctionTok{cat}\NormalTok{(}\StringTok{"Trying direct OLS..}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\NormalTok{  res\_ols }\OtherTok{\textless{}{-}} \FunctionTok{tryCatch}\NormalTok{(\{}
+\NormalTok{    coefs }\OtherTok{\textless{}{-}} \FunctionTok{ols\_coef}\NormalTok{(X, y)}
+    \FunctionTok{list}\NormalTok{(}\AttributeTok{ok =} \ConstantTok{TRUE}\NormalTok{, }\AttributeTok{coefs =}\NormalTok{ coefs)}
+\NormalTok{  \}, }\AttributeTok{error =} \ControlFlowTok{function}\NormalTok{(e) \{}
+    \FunctionTok{cat}\NormalTok{(}\StringTok{"Direct OLS failed at degree"}\NormalTok{, deg, }\StringTok{"with error:}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+    \FunctionTok{cat}\NormalTok{(e}\SpecialCharTok{$}\NormalTok{message, }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+    \FunctionTok{list}\NormalTok{(}\AttributeTok{ok =} \ConstantTok{FALSE}\NormalTok{, }\AttributeTok{coefs =} \ConstantTok{NULL}\NormalTok{)}
+\NormalTok{  \})}
+
+  \ControlFlowTok{if}\NormalTok{ (res\_ols}\SpecialCharTok{$}\NormalTok{ok) \{}
+    \FunctionTok{cat}\NormalTok{(}\StringTok{"Direct OLS coefficients:}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+    \FunctionTok{print}\NormalTok{(res\_ols}\SpecialCharTok{$}\NormalTok{coefs)}
+\NormalTok{  \}}
+
+\NormalTok{  results }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(results, }\FunctionTok{data.frame}\NormalTok{(}\AttributeTok{degree =}\NormalTok{ deg, }\AttributeTok{method =} \StringTok{"lm"}\NormalTok{, }\AttributeTok{status =} \StringTok{"ok"}\NormalTok{, }\AttributeTok{stringsAsFactors =} \ConstantTok{FALSE}\NormalTok{))}
+\NormalTok{  results }\OtherTok{\textless{}{-}} \FunctionTok{rbind}\NormalTok{(results, }\FunctionTok{data.frame}\NormalTok{(}\AttributeTok{degree =}\NormalTok{ deg, }\AttributeTok{method =} \StringTok{"ols"}\NormalTok{, }\AttributeTok{status =} \FunctionTok{ifelse}\NormalTok{(res\_ols}\SpecialCharTok{$}\NormalTok{ok, }\StringTok{"ok"}\NormalTok{, }\StringTok{"failed"}\NormalTok{), }\AttributeTok{stringsAsFactors =} \ConstantTok{FALSE}\NormalTok{))}
+
+  \ControlFlowTok{if}\NormalTok{ (}\SpecialCharTok{!}\NormalTok{res\_ols}\SpecialCharTok{$}\NormalTok{ok) }\ControlFlowTok{break}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## --- Degree 1 ---
+## lm() coefficients:
+## (Intercept)      I(x^1) 
+##   0.3100925   0.9839554 
+## Trying direct OLS..
+## Direct OLS coefficients:
+## [1] 0.3100925 0.9839554
+## 
+## --- Degree 2 ---
+## lm() coefficients:
+##  (Intercept)       I(x^1)       I(x^2) 
+##  0.003851949  1.067475514 -0.003977150 
+## Trying direct OLS..
+## Direct OLS coefficients:
+## [1]  0.003851949  1.067475514 -0.003977150
+## 
+## --- Degree 3 ---
+## lm() coefficients:
+##   (Intercept)        I(x^1)        I(x^2)        I(x^3) 
+##  6.958541e-03  1.065890e+00 -3.792965e-03 -5.847152e-06 
+## Trying direct OLS..
+## Direct OLS coefficients:
+## [1]  6.958541e-03  1.065890e+00 -3.792965e-03 -5.847152e-06
+## 
+## --- Degree 4 ---
+## lm() coefficients:
+##   (Intercept)        I(x^1)        I(x^2)        I(x^3)        I(x^4) 
+## -1.2294119322  2.0330773978 -0.1995089602  0.0142474356 -0.0003393639 
+## Trying direct OLS..
+## Direct OLS coefficients:
+## [1] -1.2294119322  2.0330773978 -0.1995089602  0.0142474356 -0.0003393639
+## 
+## --- Degree 5 ---
+## lm() coefficients:
+##   (Intercept)        I(x^1)        I(x^2)        I(x^3)        I(x^4) 
+## -3.105049e+00  4.031670e+00 -8.027894e-01  8.788905e-02 -4.231496e-03 
+##        I(x^5) 
+##  7.413585e-05 
+## Trying direct OLS..
+## Direct OLS coefficients:
+## [1] -3.105049e+00  4.031670e+00 -8.027894e-01  8.788905e-02 -4.231496e-03
+## [6]  7.413585e-05
+## 
+## --- Degree 6 ---
+## lm() coefficients:
+##   (Intercept)        I(x^1)        I(x^2)        I(x^3)        I(x^4) 
+## -2.314336e+00  2.969925e+00 -3.675492e-01  1.043454e-02  2.471972e-03 
+##        I(x^5)        I(x^6) 
+## -2.035392e-04  4.407540e-06 
+## Trying direct OLS..
+## Direct OLS failed at degree 6 with error:
+## system is computationally singular: reciprocal condition number = 3.54243e-18
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{Summary of where direct OLS failed (if any):}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Summary of where direct OLS failed (if any):
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{print}\NormalTok{(results)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##    degree method status
+## 1       1     lm     ok
+## 2       1    ols     ok
+## 3       2     lm     ok
+## 4       2    ols     ok
+## 5       3     lm     ok
+## 6       3    ols     ok
+## 7       4     lm     ok
+## 8       4    ols     ok
+## 9       5     lm     ok
+## 10      5    ols     ok
+## 11      6     lm     ok
+## 12      6    ols failed
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{\textquotesingle{}}\SpecialCharTok{\textbackslash{}n}\StringTok{Explanation: Direct OLS can fail because the matrix t(X)\%*\%X becomes singular or numerically unstable as polynomial degree increases (multicollinearity). lm() uses more stable algorithms and/or (e.g. QR) to avoid this.}\SpecialCharTok{\textbackslash{}n}\StringTok{\textquotesingle{}}\NormalTok{)    }
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Explanation: Direct OLS can fail because the matrix t(X)%*%X becomes singular or numerically unstable as polynomial degree increases (multicollinearity). lm() uses more stable algorithms and/or (e.g. QR) to avoid this.
+\end{verbatim}
+
+\end{document}

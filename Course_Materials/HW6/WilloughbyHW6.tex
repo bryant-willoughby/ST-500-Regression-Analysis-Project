@@ -1,0 +1,560 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={WilloughbyHW6},
+  pdfauthor={Bryant Willoughby},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{WilloughbyHW6}
+\author{Bryant Willoughby}
+\date{2025-10-24}
+
+\begin{document}
+\maketitle
+
+\section{Problem 1}\label{problem-1}
+
+Description: In a study of cheddar cheese, samples of cheese were
+analyzed for their chemical composition and were subjected to taste
+tests. Overall taste scores were obtained by combining the scores from
+several tasters. This is a data frame with 30 observations on four
+variables.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# help(cheddar)}
+\FunctionTok{data}\NormalTok{(cheddar)}
+\FunctionTok{head}\NormalTok{(cheddar)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   taste Acetic   H2S Lactic
+## 1  12.3  4.543 3.135   0.86
+## 2  20.9  5.159 5.043   1.53
+## 3  39.0  5.366 5.438   1.57
+## 4  47.9  5.759 7.496   1.81
+## 5   5.6  4.663 3.807   0.99
+## 6  25.9  5.697 7.601   1.09
+\end{verbatim}
+
+Using the \texttt{cheddar} data, fit a linear model with \texttt{taste}
+as the response and the other three variables as predictors.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model.OLS }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(taste }\SpecialCharTok{\textasciitilde{}}\NormalTok{ ., }\AttributeTok{data =}\NormalTok{ cheddar)}
+\FunctionTok{summary}\NormalTok{(model.OLS)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = taste ~ ., data = cheddar)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -17.390  -6.612  -1.009   4.908  25.449 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)   
+## (Intercept) -28.8768    19.7354  -1.463  0.15540   
+## Acetic        0.3277     4.4598   0.073  0.94198   
+## H2S           3.9118     1.2484   3.133  0.00425 **
+## Lactic       19.6705     8.6291   2.280  0.03108 * 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 10.13 on 26 degrees of freedom
+## Multiple R-squared:  0.6518, Adjusted R-squared:  0.6116 
+## F-statistic: 16.22 on 3 and 26 DF,  p-value: 3.81e-06
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Suppose that the observations were taken in time order. Create a time
+  variable. Plot the residuals of the model against time and comment on
+  what can be seen.
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{time.var }\OtherTok{\textless{}{-}} \DecValTok{1}\SpecialCharTok{:}\FunctionTok{nrow}\NormalTok{(cheddar)}
+\NormalTok{cheddar }\OtherTok{\textless{}{-}} \FunctionTok{cbind}\NormalTok{(cheddar, time.var)}
+\FunctionTok{head}\NormalTok{(cheddar)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   taste Acetic   H2S Lactic time.var
+## 1  12.3  4.543 3.135   0.86        1
+## 2  20.9  5.159 5.043   1.53        2
+## 3  39.0  5.366 5.438   1.57        3
+## 4  47.9  5.759 7.496   1.81        4
+## 5   5.6  4.663 3.807   0.99        5
+## 6  25.9  5.697 7.601   1.09        6
+\end{verbatim}
+
+Notice how the residuals are decreasing linearly over time. This gives
+visual (informal) evidence to suggest that the errors (residuals) are
+correlated over time, violating one of the OLS assumptions.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{plot}\NormalTok{(time.var, model.OLS}\SpecialCharTok{$}\NormalTok{residuals,}
+     \AttributeTok{main =} \StringTok{"Cheddar: OLS Residuals vs Time"}\NormalTok{,}
+     \AttributeTok{xlab =} \StringTok{"Time (index)"}\NormalTok{,}
+     \AttributeTok{ylab =} \StringTok{"Residuals"}\NormalTok{)}
+\FunctionTok{abline}\NormalTok{(}\FunctionTok{lm}\NormalTok{(}\FunctionTok{resid}\NormalTok{(model.OLS) }\SpecialCharTok{\textasciitilde{}}\NormalTok{ time.var, }\AttributeTok{data =}\NormalTok{ cheddar), }\AttributeTok{col =} \StringTok{"red"}\NormalTok{, }\AttributeTok{lwd =} \DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\pandocbounded{\includegraphics[keepaspectratio]{WilloughbyHW6_files/figure-latex/unnamed-chunk-4-1.pdf}}
+
+\begin{itemize}
+\tightlist
+\item
+  Fit a GLS model with same form as above but now allow for an AR(1)
+  correlation among the errors. Is there evidence of such a correlation?
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model.GLS }\OtherTok{\textless{}{-}} \FunctionTok{gls}\NormalTok{(taste }\SpecialCharTok{\textasciitilde{}}\NormalTok{ Acetic }\SpecialCharTok{+}\NormalTok{ H2S }\SpecialCharTok{+}\NormalTok{ Lactic, }
+                 \AttributeTok{correlation =} \FunctionTok{corAR1}\NormalTok{(}\AttributeTok{form =} \SpecialCharTok{\textasciitilde{}}\NormalTok{ time.var),}
+                 \AttributeTok{data =}\NormalTok{ cheddar)}
+\FunctionTok{summary}\NormalTok{(model.GLS)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Generalized least squares fit by REML
+##   Model: taste ~ Acetic + H2S + Lactic 
+##   Data: cheddar 
+##      AIC      BIC  logLik
+##   214.94 222.4886 -101.47
+## 
+## Correlation Structure: AR(1)
+##  Formula: ~time.var 
+##  Parameter estimate(s):
+##       Phi 
+## 0.2641944 
+## 
+## Coefficients:
+##                  Value Std.Error   t-value p-value
+## (Intercept) -30.332472 20.273077 -1.496195  0.1466
+## Acetic        1.436411  4.876581  0.294553  0.7707
+## H2S           4.058880  1.314283  3.088284  0.0047
+## Lactic       15.826468  9.235404  1.713674  0.0985
+## 
+##  Correlation: 
+##        (Intr) Acetic H2S   
+## Acetic -0.899              
+## H2S     0.424 -0.395       
+## Lactic  0.063 -0.416 -0.435
+## 
+## Standardized residuals:
+##         Min          Q1         Med          Q3         Max 
+## -1.64546468 -0.63861716 -0.06641714  0.52255676  2.41323020 
+## 
+## Residual standard error: 10.33276 
+## Degrees of freedom: 30 total; 26 residual
+\end{verbatim}
+
+Under the autoregressive model as seen above, \(\rho\) is used to test
+correlated errors. Formally, we are testing
+\(H_o: \rho = 0 \text{ vs } H_a: \rho \ne 0\). Assuming this test uses
+the \(\alpha = 0.05\) significance level, we can use a
+\(100(1 - (\alpha = 0.05)) = 95\%\) confidence level to address the same
+statistical question. That is, the below \(95\%\) CI for \(\rho\)
+contains zero. Thus, we fail to reject \(H_o\) and there is not
+significant evidence to suggest the errors are correlated.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{intervals}\NormalTok{(model.GLS)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Approximate 95% confidence intervals
+## 
+##  Coefficients:
+##                  lower       est.     upper
+## (Intercept) -72.004379 -30.332472 11.339436
+## Acetic       -8.587544   1.436411 11.460367
+## H2S           1.357332   4.058880  6.760427
+## Lactic       -3.157177  15.826468 34.810113
+## 
+##  Correlation structure:
+##          lower      est.     upper
+## Phi -0.1691951 0.2641944 0.6119685
+## 
+##  Residual standard error:
+##     lower      est.     upper 
+##  7.626295 10.332756 13.999701
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Fit a OLS model but now with time as an additional predictor.
+  Investigate the significance of time in the model.
+\end{itemize}
+
+In the following OLS model, \texttt{H2S} and \texttt{Lactic} are
+significant predictors, as was seen in the original OLS model above.
+Now, the manually constructed \texttt{time.var} is also significant in
+this model. That suggests there is an additional time component that is
+missing in the original OLS model.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model.OLS.time }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(taste }\SpecialCharTok{\textasciitilde{}}\NormalTok{ ., }\AttributeTok{data =}\NormalTok{ cheddar)}
+\FunctionTok{summary}\NormalTok{(model.OLS.time)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = taste ~ ., data = cheddar)
+## 
+## Residuals:
+##      Min       1Q   Median       3Q      Max 
+## -22.3523  -4.9735  -0.5089   4.8531  23.1311 
+## 
+## Coefficients:
+##             Estimate Std. Error t value Pr(>|t|)   
+## (Intercept) -36.6127    17.9845  -2.036  0.05250 . 
+## Acetic        4.1275     4.2556   0.970  0.34139   
+## H2S           3.5387     1.1315   3.127  0.00444 **
+## Lactic       17.9527     7.7875   2.305  0.02973 * 
+## time.var     -0.5459     0.2043  -2.672  0.01306 * 
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 9.112 on 25 degrees of freedom
+## Multiple R-squared:  0.7291, Adjusted R-squared:  0.6858 
+## F-statistic: 16.83 on 4 and 25 DF,  p-value: 8.205e-07
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  The last two models have both allowed for an effect of time. Explain
+  how they do this differently.
+\end{itemize}
+
+The GLS model treats time as a source of autocorrelation in the
+residuals, whereas the OLS model treats time as an explicit predictor
+influencing the mean response. Since these reflect different mechanisms,
+it is possible to find a significant time trend in the mean (OLS + time)
+even when the estimated residual correlation parameter \(\rho\) from the
+GLS model is not significant. This suggests that the apparent time
+pattern in the residual plot likely reflects a systematic trend in taste
+over time rather than serially correlated random fluctuations (errors
+depend on previous errors even after controlling for predictors).
+
+\section{Problem 2}\label{problem-2}
+
+Using the \texttt{sat} data, fit a model with \texttt{total} as the
+response and \texttt{takers}, \texttt{ratio}, \texttt{salary} and
+\texttt{expend} as predictors using the following methods:
+
+Description: The \texttt{sat} data frame has 50 rows and 7 columns. Data
+were collected to study the relationship between expenditures on public
+education and test results.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# help(sat)}
+\FunctionTok{data}\NormalTok{(sat)}
+\FunctionTok{head}\NormalTok{(sat)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##            expend ratio salary takers verbal math total
+## Alabama     4.405  17.2 31.144      8    491  538  1029
+## Alaska      8.963  17.6 47.951     47    445  489   934
+## Arizona     4.778  19.3 32.175     27    448  496   944
+## Arkansas    4.459  17.1 28.934      6    482  523  1005
+## California  4.992  24.0 41.078     45    417  485   902
+## Colorado    5.443  18.4 34.571     29    462  518   980
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Ordinary least squares
+\end{itemize}
+
+I consult the p-values here to assess significance of predictors in the
+model.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model.OLS }\OtherTok{\textless{}{-}} \FunctionTok{lm}\NormalTok{(total }\SpecialCharTok{\textasciitilde{}}\NormalTok{ takers }\SpecialCharTok{+}\NormalTok{ ratio }\SpecialCharTok{+}\NormalTok{ salary }\SpecialCharTok{+}\NormalTok{ expend, }\AttributeTok{data =}\NormalTok{ sat)}
+\FunctionTok{summary}\NormalTok{(model.OLS)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call:
+## lm(formula = total ~ takers + ratio + salary + expend, data = sat)
+## 
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -90.531 -20.855  -1.746  15.979  66.571 
+## 
+## Coefficients:
+##              Estimate Std. Error t value Pr(>|t|)    
+## (Intercept) 1045.9715    52.8698  19.784  < 2e-16 ***
+## takers        -2.9045     0.2313 -12.559 2.61e-16 ***
+## ratio         -3.6242     3.2154  -1.127    0.266    
+## salary         1.6379     2.3872   0.686    0.496    
+## expend         4.4626    10.5465   0.423    0.674    
+## ---
+## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+## 
+## Residual standard error: 32.7 on 45 degrees of freedom
+## Multiple R-squared:  0.8246, Adjusted R-squared:  0.809 
+## F-statistic: 52.88 on 4 and 45 DF,  p-value: < 2.2e-16
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Least absolute deviations
+\end{itemize}
+
+I consult the confidence intervals to assess significance in the
+predictors. Since the same significance level (\(\alpha = 0.05\)) is
+being used, a CI excluding zero provides evidence for a signifcant
+predictor.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model.LAD }\OtherTok{\textless{}{-}} \FunctionTok{rq}\NormalTok{(total }\SpecialCharTok{\textasciitilde{}}\NormalTok{ takers }\SpecialCharTok{+}\NormalTok{ ratio }\SpecialCharTok{+}\NormalTok{ salary }\SpecialCharTok{+}\NormalTok{ expend, }\AttributeTok{data =}\NormalTok{ sat)}
+\FunctionTok{summary}\NormalTok{(model.LAD)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call: rq(formula = total ~ takers + ratio + salary + expend, data = sat)
+## 
+## tau: [1] 0.5
+## 
+## Coefficients:
+##             coefficients lower bd   upper bd  
+## (Intercept) 1090.89886    920.17149 1151.85075
+## takers        -3.13961     -3.38485   -2.66479
+## ratio         -7.26632    -10.73796    1.62341
+## salary         3.18313     -0.15788    5.41909
+## expend        -0.79753     -8.88001   20.92522
+\end{verbatim}
+
+\begin{itemize}
+\tightlist
+\item
+  Huber's robust regression
+\end{itemize}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{round}\NormalTok{(}\FunctionTok{qt}\NormalTok{(}\FloatTok{0.025}\NormalTok{, }\AttributeTok{df =} \DecValTok{45}\NormalTok{, }\AttributeTok{lower.tail =}\NormalTok{ F),}\DecValTok{3}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] 2.014
+\end{verbatim}
+
+A predictor is significant if its respective t-test statistics has the
+following property: \(|t| \lt 2.014\)
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{model.HM }\OtherTok{\textless{}{-}} \FunctionTok{rlm}\NormalTok{(total }\SpecialCharTok{\textasciitilde{}}\NormalTok{ takers }\SpecialCharTok{+}\NormalTok{ ratio }\SpecialCharTok{+}\NormalTok{ salary }\SpecialCharTok{+}\NormalTok{ expend, }\AttributeTok{data =}\NormalTok{ sat)}
+\FunctionTok{summary}\NormalTok{(model.HM)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Call: rlm(formula = total ~ takers + ratio + salary + expend, data = sat)
+## Residuals:
+##     Min      1Q  Median      3Q     Max 
+## -92.510 -17.701  -1.002  15.015  77.058 
+## 
+## Coefficients:
+##             Value     Std. Error t value  
+## (Intercept) 1060.2074   49.8845    21.2533
+## takers        -2.9778    0.2182   -13.6470
+## ratio         -5.1254    3.0339    -1.6894
+## salary         2.0933    2.2525     0.9293
+## expend         3.9158    9.9510     0.3935
+## 
+## Residual standard error: 25.58 on 45 degrees of freedom
+\end{verbatim}
+
+Compare the results. In each case, comment on the significance of
+predictors.
+
+Across all three regression methods: ordinary least squares (OLS), least
+absolute deviations (LAD), and Huber's robust regression,
+\texttt{takers} emerges as a consistently significant predictor of total
+SAT score at the \(\alpha=0.05\). None of the other predictors reach
+statistical significance across all models, suggesting that the
+proportion of test takers is the most stable and influential variable in
+explaining variation in SAT performance.
+
+The sign reversal of the \texttt{expend} coefficient in the LAD model
+may suggest that a few high-expenditure states exert substantial
+influence in the OLS and Huber fits, pulling their coefficients
+positive. Because LAD regression minimizes absolute rather than squared
+residuals, it is less sensitive to such extreme values, so its negative
+coefficient could reflect the trend among the majority of observations
+rather than the influence of outliers. However, this interpretation
+should be made cautiously; additional diagnostic plots (e.g., residual
+vs.~leverage, influence measures) would be needed to confirm whether
+specific high-expenditure states are truly driving the difference.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{coef}\NormalTok{(model.OLS)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## (Intercept)      takers       ratio      salary      expend 
+## 1045.971536   -2.904481   -3.624232    1.637917    4.462594
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{coef}\NormalTok{(model.LAD)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  (Intercept)       takers        ratio       salary       expend 
+## 1090.8988638   -3.1396146   -7.2663187    3.1831325   -0.7975319
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{coef}\NormalTok{(model.HM)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## (Intercept)      takers       ratio      salary      expend 
+## 1060.207357   -2.977805   -5.125365    2.093258    3.915810
+\end{verbatim}
+
+\end{document}

@@ -1,0 +1,137 @@
+---
+title: "WilloughbyHW9"
+author: "Bryant Willoughby"
+date: "2025-11-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(faraway)
+library(leaps)
+```
+
+
+# Problem 1
+
+Use the `prostate` data with `lpsa` as the response and the other variables as predictors. Implement the following variable selection methods to determine the "best" model 
+
+Data (Description): A study on 97 men with prostate cancer who were due to receive a radical prostatectomy. 
+
+```{r}
+# help(prostate)
+data(prostate)
+attach(prostate)
+head(prostate)
+```
+
+- Backward elimination 
+
+Best Model: `lpsa` ~ `lcavol` + `lweight` + `svi`  
+
+```{r}
+g = lm(lpsa ~ ., data = prostate) #summary(g)
+g = update(g, . ~ . - gleason); #summary(g)
+g = update(g, . ~ . - lcp); #summary(g)
+g = update(g, . ~ . - pgg45); #summary(g)
+g = update(g, . ~ . - age); #summary(g)
+g = update(g, . ~ . - lbph); summary(g)
+```
+- AIC
+
+Best model: `lpsa` ~ `lcavol` + `lweight` + `age` + `lbph` + `svi`
+
+```{r}
+g = lm(lpsa ~ ., data = prostate)
+step(g)
+```
+- Adjusted $R^2$
+
+Best model: `lpsa` ~ `lcavol` + `lweight` + `age` + `lbph` + `svi` + `lcp` + `pgg45`
+
+```{r}
+b = regsubsets(lpsa ~ ., data = prostate)
+summary(b)
+```
+
+```{r}
+# plot adj R^2 against p + 1 
+rs = summary(b)
+plot(2:9, rs$adjr2, xlab = "No. of Parameters", 
+     ylab = "Adjusted Rsq")
+
+# select model with largest adjusted R^2
+which.max(rs$adjr2)
+```
+- Mallows Cp 
+
+Best model: `lpsa` ~ `lcavol` + `lweight` + `lbph` + `svi`
+
+```{r}
+plot(2:9, rs$cp, xlab = "No. of Parameters", 
+     ylab = "Cp")
+abline(0, 1)
+which.min(rs$cp)
+```
+
+# Problem 2 
+Using the `divusa` dataset with `divorce` as the response and the other variables as predictors, repeat the work of the first question.  
+
+Data (Description): Divorce rates in the USA from 1920-1996. 
+
+```{r}
+# help(divusa)
+data(divusa)
+attach(divusa)
+head(divusa)
+```
+
+- Backward elimination 
+
+Best model: divorce ~ year + femlab + marriage + birth + military
+
+```{r}
+g = lm(divorce ~ ., data = divusa); #summary(g)
+g = update(g, . ~ . - unemployed); summary(g)
+```
+- AIC 
+
+Best model: divorce ~ year + femlab + marriage + birth + military
+
+```{r}
+g = lm(divorce ~ ., data = divusa)
+step(g)
+```
+
+- Adjusted $R^2$
+
+Best model: divorce ~ year + femlab + marriage + birth + military 
+
+```{r}
+b = regsubsets(divorce ~ ., data = divusa)
+summary(b)
+```
+
+```{r}
+# plot adj R^2 against p + 1 
+rs = summary(b)
+plot(2:7, rs$adjr2, xlab = "No. of Parameters", 
+     ylab = "Adjusted Rsq")
+
+# select model with largest adjusted R^2
+which.max(rs$adjr2)
+```
+
+- Mallows Cp 
+
+Best model: divorce ~ year + femlab + marriage + birth + military 
+
+```{r}
+plot(2:7, rs$cp, xlab = "No. of Parameters", 
+     ylab = "Cp")
+abline(0, 1)
+which.min(rs$cp)
+```
+
+
+
