@@ -1,3 +1,17 @@
+----------------------------------------
+Course Description - STATS 500: Regression Anlaysis 
+
+This class will focus on linear and generalized linear models, and will include
+topics such as building regression models and conducting inference and model
+checking, variable selection, shrinkage estimators (e.g. ridge regression,
+LASSO), generalized linear models, etc. This course aims to introduce the basic
+concepts and statistical methods that have been commonly used in practice. After
+finishing this course, students should have the basic skills to analyze data sets
+collected under simple and standard designs.
+
+Consult Course_Materials for additional details. 
+
+----------------------------------------
 STATS 500 Final Project – Micromobility Linear Modeling
 Author: Bryant Willoughby
 Date: December 2025
